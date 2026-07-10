@@ -1,0 +1,6 @@
+{
+  "name": "NYC Government Budget & Grant Navigator",
+  "description": "An interactive dashboard for analyzing New York City discretionary funds, Schedule C budgets, and agency spending, with a server-side Gemini assistant to match non-profits with city/state grants and streamline application workflows.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
