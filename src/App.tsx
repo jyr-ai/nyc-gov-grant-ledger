@@ -27,6 +27,29 @@ export default function App() {
   const [prefillOrg, setPrefillOrg] = useState("");
   const [prefillMission, setPrefillMission] = useState("");
 
+  // Gemini API Key diagnostic states
+  const [testStatus, setTestStatus] = useState<"idle" | "testing" | "success" | "error">("idle");
+  const [testDetails, setTestDetails] = useState<string>("");
+
+  const handleTestKey = async () => {
+    setTestStatus("testing");
+    setTestDetails("");
+    try {
+      const res = await fetch("/api/health/gemini");
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setTestStatus("success");
+        setTestDetails(data.message || "Connected successfully!");
+      } else {
+        setTestStatus("error");
+        setTestDetails(data.error || "Verification failed.");
+      }
+    } catch (err: any) {
+      setTestStatus("error");
+      setTestDetails("Network error calling health diagnostic endpoint.");
+    }
+  };
+
   const handleSelectAgencyForDraft = (agency: string, orgName: string, mission: string) => {
     setPrefillAgency(agency);
     setPrefillOrg(orgName);
@@ -86,8 +109,8 @@ export default function App() {
         </div>
       </header>
 
-      {/* Navigation Sub-header (Tabs) */}
-      <div className="mx-4 sm:mx-8 border-b border-[#1A1A1A]/20 sticky top-0 z-40 bg-[#F9F8F3]/95 backdrop-blur-xs py-3" id="navigation-tabs-bar">
+      {/* Navigation Sub-header (Tabs & Gemini Diagnostics) */}
+      <div className="mx-4 sm:mx-8 border-b border-[#1A1A1A]/20 sticky top-0 md:top-0 z-40 bg-[#F9F8F3]/95 backdrop-blur-xs py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-4" id="navigation-tabs-bar">
         <div className="flex space-x-1 sm:space-x-3 overflow-x-auto scrollbar-none" id="tabs-container">
           
           <button
@@ -142,6 +165,56 @@ export default function App() {
             <span className="font-serif italic font-semibold">Filing & Readiness Guide</span>
           </button>
 
+        </div>
+
+        {/* Gemini API Diagnostic Section */}
+        <div className="flex items-center gap-2 self-start md:self-auto" id="gemini-diagnostic-widget">
+          {testStatus === "idle" && (
+            <button
+              onClick={handleTestKey}
+              className="text-[10px] font-mono font-bold uppercase tracking-wider bg-[#003B71] text-white hover:bg-[#F27D26] px-3.5 py-1.5 transition-all border-2 border-[#1A1A1A] shadow-[2px_2px_0px_0px_#1A1A1A] cursor-pointer"
+            >
+              ⚡ Test Gemini Key
+            </button>
+          )}
+          {testStatus === "testing" && (
+            <div className="text-[10px] font-mono font-bold uppercase tracking-wider bg-white text-blue-700 px-3 py-1.5 border-2 border-[#1A1A1A] flex items-center gap-2 shadow-[2px_2px_0px_0px_#1A1A1A] animate-pulse">
+              <span className="w-2 h-2 rounded-full bg-blue-700 animate-ping shrink-0" />
+              <span>Testing connection...</span>
+            </div>
+          )}
+          {testStatus === "success" && (
+            <div className="flex items-center gap-2">
+              <div className="text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 px-3 py-1.5 border-2 border-[#1A1A1A] flex items-center gap-1.5 shadow-[2px_2px_0px_0px_#1A1A1A]">
+                <span className="text-emerald-600">✓</span>
+                <span>Gemini Online</span>
+              </div>
+              <button
+                onClick={handleTestKey}
+                className="text-[10px] font-mono font-bold text-slate-500 hover:text-slate-800 underline uppercase tracking-wider px-1 cursor-pointer"
+                title="Retest Connection"
+              >
+                Retest
+              </button>
+            </div>
+          )}
+          {testStatus === "error" && (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+              <div className="text-[10px] font-mono font-bold uppercase tracking-wider bg-rose-50 text-rose-800 px-3 py-1.5 border-2 border-rose-600 flex items-center gap-1.5 shadow-[2px_2px_0px_0px_#1A1A1A]">
+                <span>⚠️</span>
+                <span>Key Error</span>
+              </div>
+              <div className="text-[10px] text-[#1A1A1A] font-mono max-w-[180px] truncate bg-white px-2 py-1 border border-slate-300" title={testDetails}>
+                {testDetails}
+              </div>
+              <button
+                onClick={handleTestKey}
+                className="text-[10px] font-mono font-bold uppercase tracking-wider bg-[#1A1A1A] text-white hover:bg-[#003B71] px-2.5 py-1.5 border-2 border-[#1A1A1A] shadow-[1px_1px_0px_0px_#1A1A1A] cursor-pointer"
+              >
+                Retry
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

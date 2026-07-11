@@ -10,7 +10,7 @@ import {
   BUDGET_INITIATIVES
 } from "./src/data/budgetData"; // Import without extension
 
-const app = express();
+export const app = express();
 const PORT = 3000;
 
 // Middleware for parsing JSON
@@ -35,6 +35,47 @@ function getGeminiClient() {
 // 1. Health Endpoint
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
+// Gemini Connection Diagnostic Endpoint
+app.get("/api/health/gemini", async (req, res) => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey || apiKey === "MY_GEMINI_API_KEY") {
+    return res.json({
+      ok: false,
+      error: "API key is missing or is using placeholder value.",
+      details: "GEMINI_API_KEY is not set in your environment variables, or it's still using the default placeholder value."
+    });
+  }
+
+  try {
+    const ai = getGeminiClient();
+    if (!ai) {
+      throw new Error("Unable to initialize Gemini client with current key configuration.");
+    }
+    
+    // Perform a tiny, fast, low-token generation request using gemini-2.5-flash
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: "Hello! Respond with exactly the single word 'SUCCESS' if you can read this."
+    });
+
+    const text = response.text?.trim() || "";
+    return res.json({
+      ok: true,
+      model: "gemini-2.5-flash",
+      responseSample: text,
+      message: "Gemini API client successfully authenticated and responded! Your API Key is fully working."
+    });
+  } catch (error: any) {
+    console.error("Gemini Health Check Error:", error);
+    return res.json({
+      ok: false,
+      error: error.message || "Failed to contact Gemini API",
+      details: error.toString(),
+      advice: "Double check your API key spelling, make sure it is not truncated, and verify it has access to the 'gemini-2.5-flash' model family."
+    });
+  }
 });
 
 // 2. Budget Stats Endpoint
@@ -284,4 +325,8 @@ async function startServer() {
   });
 }
 
-startServer();
+if (!process.env.VERCEL) {
+  startServer();
+}
+
+export default app;
