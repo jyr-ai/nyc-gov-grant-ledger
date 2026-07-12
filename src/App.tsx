@@ -27,19 +27,22 @@ export default function App() {
   const [prefillOrg, setPrefillOrg] = useState("");
   const [prefillMission, setPrefillMission] = useState("");
 
-  // Gemini API Key diagnostic states
+  // Gemini & Fallback API Key diagnostic states
   const [testStatus, setTestStatus] = useState<"idle" | "testing" | "success" | "error">("idle");
   const [testDetails, setTestDetails] = useState<string>("");
+  const [activeProvider, setActiveProvider] = useState<string>("");
 
   const handleTestKey = async () => {
     setTestStatus("testing");
     setTestDetails("");
+    setActiveProvider("");
     try {
       const res = await fetch("/api/health/gemini");
       const data = await res.json();
       if (res.ok && data.ok) {
         setTestStatus("success");
         setTestDetails(data.message || "Connected successfully!");
+        setActiveProvider(data.provider || "gemini");
       } else {
         setTestStatus("error");
         setTestDetails(data.error || "Verification failed.");
@@ -167,14 +170,14 @@ export default function App() {
 
         </div>
 
-        {/* Gemini API Diagnostic Section */}
+        {/* Gemini & Fallback AI API Diagnostic Section */}
         <div className="flex items-center gap-2 self-start md:self-auto" id="gemini-diagnostic-widget">
           {testStatus === "idle" && (
             <button
               onClick={handleTestKey}
               className="text-[10px] font-mono font-bold uppercase tracking-wider bg-[#003B71] text-white hover:bg-[#F27D26] px-3.5 py-1.5 transition-all border-2 border-[#1A1A1A] shadow-[2px_2px_0px_0px_#1A1A1A] cursor-pointer"
             >
-              ⚡ Test Gemini Key
+              ⚡ Test AI Connection
             </button>
           )}
           {testStatus === "testing" && (
@@ -187,7 +190,7 @@ export default function App() {
             <div className="flex items-center gap-2">
               <div className="text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 px-3 py-1.5 border-2 border-[#1A1A1A] flex items-center gap-1.5 shadow-[2px_2px_0px_0px_#1A1A1A]">
                 <span className="text-emerald-600">✓</span>
-                <span>Gemini Online</span>
+                <span>{activeProvider === "anthropic" ? "Claude Backup Active" : "Gemini Online"}</span>
               </div>
               <button
                 onClick={handleTestKey}
@@ -202,7 +205,7 @@ export default function App() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
               <div className="text-[10px] font-mono font-bold uppercase tracking-wider bg-rose-50 text-rose-800 px-3 py-1.5 border-2 border-rose-600 flex items-center gap-1.5 shadow-[2px_2px_0px_0px_#1A1A1A]">
                 <span>⚠️</span>
-                <span>Key Error</span>
+                <span>Connection Error</span>
               </div>
               <div className="text-[10px] text-[#1A1A1A] font-mono max-w-[180px] truncate bg-white px-2 py-1 border border-slate-300" title={testDetails}>
                 {testDetails}

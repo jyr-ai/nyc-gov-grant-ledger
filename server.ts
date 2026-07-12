@@ -1,6 +1,5 @@
 import express from "express";
 import path from "path";
-import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import {
   NYC_BUDGET_OVERVIEW,
@@ -32,50 +31,234 @@ function getGeminiClient() {
   });
 }
 
+// Extract JSON safely from AI text outputs
+function extractJson(text: string): any {
+  try {
+    return JSON.parse(text.trim());
+  } catch (e) {
+    const startIndex = text.indexOf('{');
+    const endIndex = text.lastIndexOf('}');
+    if (startIndex !== -1 && endIndex !== -1 && endIndex > startIndex) {
+      const jsonStr = text.substring(startIndex, endIndex + 1);
+      return JSON.parse(jsonStr);
+    }
+    throw e;
+  }
+}
+
+// Test connection to Anthropic's Claude API
+async function testAnthropicConnection(apiKey: string): Promise<string> {
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "content-type": "application/json"
+    },
+    body: JSON.stringify({
+      model: "claude-3-5-sonnet-20241022",
+      max_tokens: 10,
+      messages: [
+        {
+          role: "user",
+          content: "Respond with the word SUCCESS"
+        }
+      ]
+    })
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Anthropic status ${response.status}: ${text}`);
+  }
+
+  const data: any = await response.json();
+  return data.content?.[0]?.text?.trim() || "";
+}
+
+// High-level AI helper that handles Gemini with fallback to Anthropic
+async function generateAIContent(
+  systemInstruction: string,
+  userPrompt: string,
+  geminiSchema?: any
+): Promise<any> {
+  const geminiClient = getGeminiClient();
+  let geminiError: any = null;
+
+  if (geminiClient) {
+    try {
+      console.log("Attempting to call Gemini API...");
+      const config: any = {
+        systemInstruction,
+        responseMimeType: "application/json"
+      };
+      if (geminiSchema) {
+        config.responseSchema = geminiSchema;
+      }
+
+      const response = await geminiClient.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: userPrompt,
+        config
+      });
+
+      const text = response.text;
+      if (text) {
+        return extractJson(text);
+      }
+      throw new Error("No text response from Gemini API.");
+    } catch (err: any) {
+      console.error("Gemini API call failed, attempting backup Anthropic API...", err);
+      geminiError = err;
+    }
+  } else {
+    console.log("Gemini client unconfigured, attempting backup Anthropic API...");
+    geminiError = new Error("GEMINI_API_KEY is not configured.");
+  }
+
+  // Fallback to Anthropic Claude
+  const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
+  if (!anthropicApiKey || anthropicApiKey === "MY_ANTHROPIC_API_KEY") {
+    throw new Error(`Primary AI (Gemini) failed: ${geminiError.message}. No backup Anthropic API key configured.`);
+  }
+
+  try {
+    console.log("Attempting to call Anthropic API...");
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": anthropicApiKey,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "claude-3-5-sonnet-20241022",
+        max_tokens: 4000,
+        system: systemInstruction + "\n\nCRITICAL: Your output MUST be a strict JSON object. Do not include any introductory or concluding text outside the JSON block.",
+        messages: [
+          {
+            role: "user",
+            content: userPrompt
+          }
+        ]
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Anthropic API returned status ${response.status}: ${errorText}`);
+    }
+
+    const data: any = await response.json();
+    const textContent = data.content?.[0]?.text;
+    if (!textContent) {
+      throw new Error("Empty content received from Anthropic API.");
+    }
+
+    return extractJson(textContent);
+  } catch (anthropicErr: any) {
+    console.error("Anthropic Fallback also failed:", anthropicErr);
+    throw new Error(`Both primary and backup AI services failed.\nGemini error: ${geminiError.message}\nAnthropic error: ${anthropicErr.message}`);
+  }
+}
+
 // 1. Health Endpoint
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// Gemini Connection Diagnostic Endpoint
+// AI Connection Diagnostic Endpoint (Gemini with Anthropic Fallback)
 app.get("/api/health/gemini", async (req, res) => {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey || apiKey === "MY_GEMINI_API_KEY") {
+  const geminiKey = process.env.GEMINI_API_KEY;
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+
+  const hasGemini = geminiKey && geminiKey !== "MY_GEMINI_API_KEY";
+  const hasAnthropic = anthropicKey && anthropicKey !== "MY_ANTHROPIC_API_KEY";
+
+  if (!hasGemini && !hasAnthropic) {
     return res.json({
       ok: false,
-      error: "API key is missing or is using placeholder value.",
-      details: "GEMINI_API_KEY is not set in your environment variables, or it's still using the default placeholder value."
+      error: "No AI API keys configured.",
+      details: "Neither GEMINI_API_KEY nor ANTHROPIC_API_KEY are configured in environment variables."
     });
   }
 
-  try {
-    const ai = getGeminiClient();
-    if (!ai) {
-      throw new Error("Unable to initialize Gemini client with current key configuration.");
+  // Try Gemini first
+  if (hasGemini) {
+    try {
+      const ai = getGeminiClient();
+      if (!ai) {
+        throw new Error("Unable to initialize Gemini client.");
+      }
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: "Hello! Respond with exactly the single word 'SUCCESS' if you can read this."
+      });
+      const text = response.text?.trim() || "";
+      return res.json({
+        ok: true,
+        provider: "gemini",
+        model: "gemini-2.5-flash",
+        responseSample: text,
+        message: "Primary AI (Gemini) successfully authenticated and responded! Your Gemini API Key is active."
+      });
+    } catch (geminiError: any) {
+      console.warn("Health Check: Gemini failed, trying fallback check on Anthropic...", geminiError);
+      
+      if (hasAnthropic) {
+        try {
+          const anthropicResponse = await testAnthropicConnection(anthropicKey);
+          return res.json({
+            ok: true,
+            provider: "anthropic",
+            model: "claude-3-5-sonnet-20241022",
+            responseSample: anthropicResponse,
+            message: `Primary AI (Gemini) failed: ${geminiError.message}. Successfully failed-over to backup Anthropic API!`
+          });
+        } catch (anthropicError: any) {
+          return res.json({
+            ok: false,
+            error: "Both AI providers failed.",
+            details: `Gemini failure: ${geminiError.message}. Anthropic failure: ${anthropicError.message}`,
+            advice: "Please double check both your GEMINI_API_KEY and ANTHROPIC_API_KEY configurations."
+          });
+        }
+      } else {
+        return res.json({
+          ok: false,
+          error: "Primary AI (Gemini) failed and no backup key is configured.",
+          details: geminiError.message,
+          advice: "Configure ANTHROPIC_API_KEY as a backup or fix your GEMINI_API_KEY setup."
+        });
+      }
     }
-    
-    // Perform a tiny, fast, low-token generation request using gemini-2.5-flash
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: "Hello! Respond with exactly the single word 'SUCCESS' if you can read this."
-    });
-
-    const text = response.text?.trim() || "";
-    return res.json({
-      ok: true,
-      model: "gemini-2.5-flash",
-      responseSample: text,
-      message: "Gemini API client successfully authenticated and responded! Your API Key is fully working."
-    });
-  } catch (error: any) {
-    console.error("Gemini Health Check Error:", error);
-    return res.json({
-      ok: false,
-      error: error.message || "Failed to contact Gemini API",
-      details: error.toString(),
-      advice: "Double check your API key spelling, make sure it is not truncated, and verify it has access to the 'gemini-2.5-flash' model family."
-    });
   }
+
+  // If only Anthropic is configured
+  if (hasAnthropic) {
+    try {
+      const anthropicResponse = await testAnthropicConnection(anthropicKey);
+      return res.json({
+        ok: true,
+        provider: "anthropic",
+        model: "claude-3-5-sonnet-20241022",
+        responseSample: anthropicResponse,
+        message: "Backup AI (Anthropic) successfully authenticated and responded! (Gemini API key is unconfigured)."
+      });
+    } catch (anthropicError: any) {
+      return res.json({
+        ok: false,
+        error: "Anthropic API check failed.",
+        details: anthropicError.message,
+        advice: "Double check your ANTHROPIC_API_KEY value and ensure it is valid."
+      });
+    }
+  }
+
+  return res.json({
+    ok: false,
+    error: "Unknown state."
+  });
 });
 
 // 2. Budget Stats Endpoint
@@ -96,15 +279,6 @@ app.post("/api/grant/match", async (req, res) => {
 
     if (!orgName || !mission) {
       return res.status(400).json({ error: "Organization Name and Mission statement are required." });
-    }
-
-    const ai = getGeminiClient();
-    if (!ai) {
-      return res.status(500).json({
-        error: "Gemini API Key is missing.",
-        needsKey: true,
-        message: "Please configure your GEMINI_API_KEY in the Settings > Secrets panel of your AI Studio Workspace."
-      });
     }
 
     // System instruction to guide the matching process
@@ -152,79 +326,66 @@ Always speak objectively, with professional composure, using clear human labels 
       ]
     }`;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
-      contents: userPrompt,
-      config: {
-        systemInstruction,
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            relevanceScore: { type: Type.INTEGER },
-            analysisSummary: { type: Type.STRING },
-            recommendedAgencies: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  agency: { type: Type.STRING },
-                  name: { type: Type.STRING },
-                  rationale: { type: Type.STRING },
-                  budgetLines: { type: Type.ARRAY, items: { type: Type.STRING } },
-                  estimatedGrantRange: { type: Type.STRING }
-                },
-                required: ["agency", "name", "rationale", "budgetLines", "estimatedGrantRange"]
-              }
+    const MATCH_RESPONSE_SCHEMA = {
+      type: Type.OBJECT,
+      properties: {
+        relevanceScore: { type: Type.INTEGER },
+        analysisSummary: { type: Type.STRING },
+        recommendedAgencies: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              agency: { type: Type.STRING },
+              name: { type: Type.STRING },
+              rationale: { type: Type.STRING },
+              budgetLines: { type: Type.ARRAY, items: { type: Type.STRING } },
+              estimatedGrantRange: { type: Type.STRING }
             },
-            nysOpportunities: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  program: { type: Type.STRING },
-                  department: { type: Type.STRING },
-                  description: { type: Type.STRING },
-                  prequalificationRequired: { type: Type.BOOLEAN }
-                },
-                required: ["program", "department", "description", "prequalificationRequired"]
-              }
+            required: ["agency", "name", "rationale", "budgetLines", "estimatedGrantRange"]
+          }
+        },
+        nysOpportunities: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              program: { type: Type.STRING },
+              department: { type: Type.STRING },
+              description: { type: Type.STRING },
+              prequalificationRequired: { type: Type.BOOLEAN }
             },
-            applicationChecklist: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  step: { type: Type.STRING },
-                  description: { type: Type.STRING },
-                  portal: { type: Type.STRING }
-                },
-                required: ["step", "description", "portal"]
-              }
+            required: ["program", "department", "description", "prequalificationRequired"]
+          }
+        },
+        applicationChecklist: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              step: { type: Type.STRING },
+              description: { type: Type.STRING },
+              portal: { type: Type.STRING }
             },
-            priorityAlignmentSuggestions: {
-              type: Type.ARRAY,
-              items: { type: Type.STRING }
-            }
-          },
-          required: [
-            "relevanceScore",
-            "analysisSummary",
-            "recommendedAgencies",
-            "nysOpportunities",
-            "applicationChecklist",
-            "priorityAlignmentSuggestions"
-          ]
+            required: ["step", "description", "portal"]
+          }
+        },
+        priorityAlignmentSuggestions: {
+          type: Type.ARRAY,
+          items: { type: Type.STRING }
         }
-      }
-    });
+      },
+      required: [
+        "relevanceScore",
+        "analysisSummary",
+        "recommendedAgencies",
+        "nysOpportunities",
+        "applicationChecklist",
+        "priorityAlignmentSuggestions"
+      ]
+    };
 
-    const text = response.text;
-    if (!text) {
-      throw new Error("No text response from Gemini API.");
-    }
-
-    const parsedData = JSON.parse(text.trim());
+    const parsedData = await generateAIContent(systemInstruction, userPrompt, MATCH_RESPONSE_SCHEMA);
     res.json(parsedData);
   } catch (err: any) {
     console.error("Error in matching grant:", err);
@@ -239,15 +400,6 @@ app.post("/api/grant/draft", async (req, res) => {
 
     if (!orgName || !mission || !selectedAgency || !programName) {
       return res.status(400).json({ error: "Required details: Organization, Mission, Target Agency, and Program Name." });
-    }
-
-    const ai = getGeminiClient();
-    if (!ai) {
-      return res.status(500).json({
-        error: "Gemini API Key is missing.",
-        needsKey: true,
-        message: "Please configure your GEMINI_API_KEY in the Settings > Secrets panel."
-      });
     }
 
     const systemInstruction = `You are an expert NYC discretionary grant draft writer. 
@@ -270,31 +422,18 @@ Avoid jargon-loaded AI phrases; instead, speak in clear, outcome-focused languag
       "budgetNarrative": "string explaining how the requested amount of $${requestedAmount || "25,000"} will be allocated between Personal Services (PS) (e.g., instructors, project managers) and Other Than Personal Services (OTPS) (supplies, insurance, food, local travel)"
     }`;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
-      contents: userPrompt,
-      config: {
-        systemInstruction,
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            statementOfNeed: { type: Type.STRING },
-            programDesign: { type: Type.STRING },
-            performanceMetrics: { type: Type.STRING },
-            budgetNarrative: { type: Type.STRING }
-          },
-          required: ["statementOfNeed", "programDesign", "performanceMetrics", "budgetNarrative"]
-        }
-      }
-    });
+    const DRAFT_RESPONSE_SCHEMA = {
+      type: Type.OBJECT,
+      properties: {
+        statementOfNeed: { type: Type.STRING },
+        programDesign: { type: Type.STRING },
+        performanceMetrics: { type: Type.STRING },
+        budgetNarrative: { type: Type.STRING }
+      },
+      required: ["statementOfNeed", "programDesign", "performanceMetrics", "budgetNarrative"]
+    };
 
-    const text = response.text;
-    if (!text) {
-      throw new Error("No text response from Gemini API for proposal draft.");
-    }
-
-    const parsedData = JSON.parse(text.trim());
+    const parsedData = await generateAIContent(systemInstruction, userPrompt, DRAFT_RESPONSE_SCHEMA);
     res.json(parsedData);
   } catch (err: any) {
     console.error("Error in drafting proposal:", err);
@@ -306,6 +445,7 @@ Avoid jargon-loaded AI phrases; instead, speak in clear, outcome-focused languag
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     console.log("Starting Express with Vite middleware (development)...");
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
