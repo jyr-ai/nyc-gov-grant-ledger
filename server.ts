@@ -76,89 +76,90 @@ async function testAnthropicConnection(apiKey: string): Promise<string> {
   return data.content?.[0]?.text?.trim() || "";
 }
 
-// High-level AI helper that handles Gemini with fallback to Anthropic
+// High-level AI helper that handles Anthropic Claude with fallback to Gemini
 async function generateAIContent(
   systemInstruction: string,
   userPrompt: string,
   geminiSchema?: any
 ): Promise<any> {
-  const geminiClient = getGeminiClient();
-  let geminiError: any = null;
+  const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
+  const hasAnthropic = anthropicApiKey && anthropicApiKey !== "MY_ANTHROPIC_API_KEY";
+  let anthropicError: any = null;
 
-  if (geminiClient) {
+  if (hasAnthropic) {
     try {
-      console.log("Attempting to call Gemini API...");
-      const config: any = {
-        systemInstruction,
-        responseMimeType: "application/json"
-      };
-      if (geminiSchema) {
-        config.responseSchema = geminiSchema;
-      }
-
-      const response = await geminiClient.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: userPrompt,
-        config
+      console.log("Attempting to call Anthropic API (Primary)...");
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": anthropicApiKey,
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "claude-3-5-sonnet-20241022",
+          max_tokens: 4000,
+          system: systemInstruction + "\n\nCRITICAL: Your output MUST be a strict JSON object. Do not include any introductory or concluding text outside the JSON block.",
+          messages: [
+            {
+              role: "user",
+              content: userPrompt
+            }
+          ]
+        })
       });
 
-      const text = response.text;
-      if (text) {
-        return extractJson(text);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Anthropic API returned status ${response.status}: ${errorText}`);
       }
-      throw new Error("No text response from Gemini API.");
+
+      const data: any = await response.json();
+      const textContent = data.content?.[0]?.text;
+      if (!textContent) {
+        throw new Error("Empty content received from Anthropic API.");
+      }
+
+      return extractJson(textContent);
     } catch (err: any) {
-      console.error("Gemini API call failed, attempting backup Anthropic API...", err);
-      geminiError = err;
+      console.error("Anthropic API call failed, attempting backup Gemini API...", err);
+      anthropicError = err;
     }
   } else {
-    console.log("Gemini client unconfigured, attempting backup Anthropic API...");
-    geminiError = new Error("GEMINI_API_KEY is not configured.");
+    console.log("Anthropic key unconfigured, attempting backup Gemini API...");
+    anthropicError = new Error("ANTHROPIC_API_KEY is not configured.");
   }
 
-  // Fallback to Anthropic Claude
-  const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
-  if (!anthropicApiKey || anthropicApiKey === "MY_ANTHROPIC_API_KEY") {
-    throw new Error(`Primary AI (Gemini) failed: ${geminiError.message}. No backup Anthropic API key configured.`);
+  // Fallback to Gemini
+  const geminiClient = getGeminiClient();
+  if (!geminiClient) {
+    throw new Error(`Primary AI (Anthropic) failed: ${anthropicError.message}. No backup Gemini API key configured.`);
   }
 
   try {
-    console.log("Attempting to call Anthropic API...");
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": anthropicApiKey,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "claude-3-5-sonnet-20241022",
-        max_tokens: 4000,
-        system: systemInstruction + "\n\nCRITICAL: Your output MUST be a strict JSON object. Do not include any introductory or concluding text outside the JSON block.",
-        messages: [
-          {
-            role: "user",
-            content: userPrompt
-          }
-        ]
-      })
+    console.log("Attempting to call Gemini API (Fallback)...");
+    const config: any = {
+      systemInstruction,
+      responseMimeType: "application/json"
+    };
+    if (geminiSchema) {
+      config.responseSchema = geminiSchema;
+    }
+
+    const response = await geminiClient.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: userPrompt,
+      config
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Anthropic API returned status ${response.status}: ${errorText}`);
+    const text = response.text;
+    if (text) {
+      return extractJson(text);
     }
-
-    const data: any = await response.json();
-    const textContent = data.content?.[0]?.text;
-    if (!textContent) {
-      throw new Error("Empty content received from Anthropic API.");
-    }
-
-    return extractJson(textContent);
-  } catch (anthropicErr: any) {
-    console.error("Anthropic Fallback also failed:", anthropicErr);
-    throw new Error(`Both primary and backup AI services failed.\nGemini error: ${geminiError.message}\nAnthropic error: ${anthropicErr.message}`);
+    throw new Error("No text response from Gemini API.");
+  } catch (geminiErr: any) {
+    console.error("Gemini Fallback also failed:", geminiErr);
+    throw new Error(`Both primary and backup AI services failed.\nAnthropic error: ${anthropicError.message}\nGemini error: ${geminiErr.message}`);
   }
 }
 
@@ -167,7 +168,7 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// AI Connection Diagnostic Endpoint (Gemini with Anthropic Fallback)
+// AI Connection Diagnostic Endpoint (Anthropic with Gemini Fallback)
 app.get("/api/health/gemini", async (req, res) => {
   const geminiKey = process.env.GEMINI_API_KEY;
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
@@ -179,11 +180,63 @@ app.get("/api/health/gemini", async (req, res) => {
     return res.json({
       ok: false,
       error: "No AI API keys configured.",
-      details: "Neither GEMINI_API_KEY nor ANTHROPIC_API_KEY are configured in environment variables."
+      details: "Neither ANTHROPIC_API_KEY nor GEMINI_API_KEY are configured in environment variables."
     });
   }
 
-  // Try Gemini first
+  // Try Anthropic first
+  if (hasAnthropic) {
+    try {
+      console.log("Health Check: Testing Anthropic...");
+      const anthropicResponse = await testAnthropicConnection(anthropicKey);
+      return res.json({
+        ok: true,
+        provider: "anthropic",
+        model: "claude-3-5-sonnet-20241022",
+        responseSample: anthropicResponse,
+        message: "Primary AI (Anthropic Claude) successfully authenticated and responded! Your Anthropic API Key is active."
+      });
+    } catch (anthropicError: any) {
+      console.warn("Health Check: Anthropic failed, trying fallback check on Gemini...", anthropicError);
+      
+      if (hasGemini) {
+        try {
+          const ai = getGeminiClient();
+          if (!ai) {
+            throw new Error("Unable to initialize Gemini client.");
+          }
+          const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: "Hello! Respond with exactly the single word 'SUCCESS' if you can read this."
+          });
+          const text = response.text?.trim() || "";
+          return res.json({
+            ok: true,
+            provider: "gemini",
+            model: "gemini-2.5-flash",
+            responseSample: text,
+            message: `Primary AI (Anthropic) failed: ${anthropicError.message}. Successfully failed-over to backup Gemini API!`
+          });
+        } catch (geminiError: any) {
+          return res.json({
+            ok: false,
+            error: "Both AI providers failed.",
+            details: `Anthropic failure: ${anthropicError.message}. Gemini failure: ${geminiError.message}`,
+            advice: "Please double check both your ANTHROPIC_API_KEY and GEMINI_API_KEY configurations."
+          });
+        }
+      } else {
+        return res.json({
+          ok: false,
+          error: "Primary AI (Anthropic) failed and no backup key is configured.",
+          details: anthropicError.message,
+          advice: "Configure GEMINI_API_KEY as a backup or fix your ANTHROPIC_API_KEY setup."
+        });
+      }
+    }
+  }
+
+  // If only Gemini is configured
   if (hasGemini) {
     try {
       const ai = getGeminiClient();
@@ -200,57 +253,14 @@ app.get("/api/health/gemini", async (req, res) => {
         provider: "gemini",
         model: "gemini-2.5-flash",
         responseSample: text,
-        message: "Primary AI (Gemini) successfully authenticated and responded! Your Gemini API Key is active."
+        message: "Backup AI (Gemini) successfully authenticated and responded! (Anthropic API key is unconfigured)."
       });
     } catch (geminiError: any) {
-      console.warn("Health Check: Gemini failed, trying fallback check on Anthropic...", geminiError);
-      
-      if (hasAnthropic) {
-        try {
-          const anthropicResponse = await testAnthropicConnection(anthropicKey);
-          return res.json({
-            ok: true,
-            provider: "anthropic",
-            model: "claude-3-5-sonnet-20241022",
-            responseSample: anthropicResponse,
-            message: `Primary AI (Gemini) failed: ${geminiError.message}. Successfully failed-over to backup Anthropic API!`
-          });
-        } catch (anthropicError: any) {
-          return res.json({
-            ok: false,
-            error: "Both AI providers failed.",
-            details: `Gemini failure: ${geminiError.message}. Anthropic failure: ${anthropicError.message}`,
-            advice: "Please double check both your GEMINI_API_KEY and ANTHROPIC_API_KEY configurations."
-          });
-        }
-      } else {
-        return res.json({
-          ok: false,
-          error: "Primary AI (Gemini) failed and no backup key is configured.",
-          details: geminiError.message,
-          advice: "Configure ANTHROPIC_API_KEY as a backup or fix your GEMINI_API_KEY setup."
-        });
-      }
-    }
-  }
-
-  // If only Anthropic is configured
-  if (hasAnthropic) {
-    try {
-      const anthropicResponse = await testAnthropicConnection(anthropicKey);
-      return res.json({
-        ok: true,
-        provider: "anthropic",
-        model: "claude-3-5-sonnet-20241022",
-        responseSample: anthropicResponse,
-        message: "Backup AI (Anthropic) successfully authenticated and responded! (Gemini API key is unconfigured)."
-      });
-    } catch (anthropicError: any) {
       return res.json({
         ok: false,
-        error: "Anthropic API check failed.",
-        details: anthropicError.message,
-        advice: "Double check your ANTHROPIC_API_KEY value and ensure it is valid."
+        error: "Gemini API check failed.",
+        details: geminiError.message,
+        advice: "Double check your GEMINI_API_KEY value and ensure it is valid."
       });
     }
   }
