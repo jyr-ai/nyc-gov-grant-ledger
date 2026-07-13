@@ -207,7 +207,7 @@ export default function App() {
                 <span>⚠️</span>
                 <span>Connection Error</span>
               </div>
-              <div className="text-[10px] text-[#1A1A1A] font-mono max-w-[180px] truncate bg-white px-2 py-1 border border-slate-300" title={testDetails}>
+              <div className="text-[10px] text-[#1A1A1A] font-mono max-w-[320px] break-words bg-white px-2 py-1 border border-slate-300" title={testDetails}>
                 {testDetails}
               </div>
               <button
