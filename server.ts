@@ -271,6 +271,109 @@ app.get("/api/health/gemini", async (req, res) => {
   });
 });
 
+// Detailed AI diagnostics endpoint. Safe to expose publicly: it never returns
+// full secret values, only presence, a masked preview, and live-test results.
+// Open /api/debug on the deployed URL to see exactly why the keys are/aren't working.
+app.get("/api/debug", async (req, res) => {
+  const geminiKey = process.env.GEMINI_API_KEY;
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+
+  const mask = (k?: string) => {
+    if (!k) return null;
+    if (k.length <= 8) return `***(length ${k.length})`;
+    return `${k.slice(0, 4)}…${k.slice(-4)} (length ${k.length})`;
+  };
+
+  const anthropicConfigured = !!anthropicKey && anthropicKey !== "MY_ANTHROPIC_API_KEY";
+  const geminiConfigured = !!geminiKey && geminiKey !== "MY_GEMINI_API_KEY";
+
+  const diagnostics: any = {
+    timestamp: new Date().toISOString(),
+    runtime: {
+      onVercel: !!process.env.VERCEL,
+      // "production" | "preview" | "development". Env vars scoped to Production
+      // only will be absent on Preview (branch) deployments.
+      vercelEnv: process.env.VERCEL_ENV || null,
+      nodeEnv: process.env.NODE_ENV || null,
+      region: process.env.VERCEL_REGION || null
+    },
+    env: {
+      ANTHROPIC_API_KEY: {
+        present: anthropicKey !== undefined,
+        isPlaceholder: anthropicKey === "MY_ANTHROPIC_API_KEY",
+        configured: anthropicConfigured,
+        preview: mask(anthropicKey),
+        looksValidPrefix: anthropicConfigured ? anthropicKey!.startsWith("sk-ant-") : null
+      },
+      GEMINI_API_KEY: {
+        present: geminiKey !== undefined,
+        isPlaceholder: geminiKey === "MY_GEMINI_API_KEY",
+        configured: geminiConfigured,
+        preview: mask(geminiKey),
+        looksValidPrefix: geminiConfigured ? geminiKey!.startsWith("AIza") : null
+      }
+    },
+    liveTests: {} as any
+  };
+
+  // Anthropic live test (full error surfaced for debugging)
+  if (anthropicConfigured) {
+    try {
+      const sample = await testAnthropicConnection(anthropicKey!);
+      diagnostics.liveTests.anthropic = {
+        ok: true,
+        model: "claude-3-5-sonnet-20241022",
+        responseSample: sample
+      };
+    } catch (err: any) {
+      diagnostics.liveTests.anthropic = { ok: false, error: err.message };
+    }
+  } else {
+    diagnostics.liveTests.anthropic = {
+      ok: false,
+      skipped: true,
+      reason: "ANTHROPIC_API_KEY not configured"
+    };
+  }
+
+  // Gemini live test (full error surfaced for debugging)
+  if (geminiConfigured) {
+    try {
+      const ai = getGeminiClient();
+      if (!ai) throw new Error("Unable to initialize Gemini client.");
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: "Respond with exactly the single word SUCCESS."
+      });
+      diagnostics.liveTests.gemini = {
+        ok: true,
+        model: "gemini-2.5-flash",
+        responseSample: response.text?.trim() || ""
+      };
+    } catch (err: any) {
+      diagnostics.liveTests.gemini = { ok: false, error: err.message };
+    }
+  } else {
+    diagnostics.liveTests.gemini = {
+      ok: false,
+      skipped: true,
+      reason: "GEMINI_API_KEY not configured"
+    };
+  }
+
+  if (diagnostics.liveTests.anthropic.ok || diagnostics.liveTests.gemini.ok) {
+    diagnostics.summary = "At least one AI provider authenticated successfully.";
+  } else if (!anthropicConfigured && !geminiConfigured) {
+    diagnostics.summary =
+      "No AI API keys are configured in this environment. This app was exported from Google AI Studio, which injects GEMINI_API_KEY automatically — Vercel does not. Add GEMINI_API_KEY and/or ANTHROPIC_API_KEY under Vercel → Project → Settings → Environment Variables (scope: Production AND Preview), then redeploy.";
+  } else {
+    diagnostics.summary =
+      "Key(s) present but the live test failed — see liveTests[].error for the exact provider response (e.g. 401 = invalid/expired key, 403 = key lacks access, 429 = quota/billing).";
+  }
+
+  res.json(diagnostics);
+});
+
 // 2. Budget Stats Endpoint
 app.get("/api/budget/stats", (req, res) => {
   res.json({
