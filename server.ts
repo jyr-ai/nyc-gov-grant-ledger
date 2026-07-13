@@ -12,6 +12,11 @@ import {
 export const app = express();
 const PORT = 3000;
 
+// Anthropic model used for all Claude calls. Keep this to a model your API key
+// actually has access to — an inaccessible/legacy id returns HTTP 404
+// (not_found_error), which looks like a failure even when the key is valid.
+const CLAUDE_MODEL = "claude-sonnet-4-5-20250929";
+
 // Middleware for parsing JSON
 app.use(express.json());
 
@@ -56,7 +61,7 @@ async function testAnthropicConnection(apiKey: string): Promise<string> {
       "content-type": "application/json"
     },
     body: JSON.stringify({
-      model: "claude-3-5-sonnet-20241022",
+      model: CLAUDE_MODEL,
       max_tokens: 10,
       messages: [
         {
@@ -97,7 +102,7 @@ async function generateAIContent(
           "content-type": "application/json"
         },
         body: JSON.stringify({
-          model: "claude-3-5-sonnet-20241022",
+          model: CLAUDE_MODEL,
           max_tokens: 4000,
           system: systemInstruction + "\n\nCRITICAL: Your output MUST be a strict JSON object. Do not include any introductory or concluding text outside the JSON block.",
           messages: [
@@ -192,7 +197,7 @@ app.get("/api/health/gemini", async (req, res) => {
       return res.json({
         ok: true,
         provider: "anthropic",
-        model: "claude-3-5-sonnet-20241022",
+        model: CLAUDE_MODEL,
         responseSample: anthropicResponse,
         message: "Primary AI (Anthropic Claude) successfully authenticated and responded! Your Anthropic API Key is active."
       });
@@ -322,7 +327,7 @@ app.get("/api/debug", async (req, res) => {
       const sample = await testAnthropicConnection(anthropicKey!);
       diagnostics.liveTests.anthropic = {
         ok: true,
-        model: "claude-3-5-sonnet-20241022",
+        model: CLAUDE_MODEL,
         responseSample: sample
       };
     } catch (err: any) {
