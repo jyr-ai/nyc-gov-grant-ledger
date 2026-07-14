@@ -7,7 +7,7 @@ import {
   FOCUS_AREA_DATA,
   BOROUGH_DATA,
   BUDGET_INITIATIVES
-} from "./src/data/budgetData"; // Import without extension
+} from "./src/data/budgetData.js"; // .js extension required for Node ESM on Vercel (resolves to the .ts source)
 
 export const app = express();
 const PORT = 3000;
