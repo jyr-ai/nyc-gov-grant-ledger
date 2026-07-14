@@ -559,6 +559,25 @@ Avoid jargon-loaded AI phrases; instead, speak in clear, outcome-focused languag
   }
 });
 
+// Any unmatched /api/* route returns JSON (never the SPA HTML or a platform page)
+app.use("/api", (req, res) => {
+  res.status(404).json({
+    error: "API route not found.",
+    details: `No handler for ${req.method} ${req.originalUrl}`
+  });
+});
+
+// Global error handler: guarantees a JSON body even if a handler throws, so the
+// client never has to parse Vercel's plain-text "A server error has occurred".
+app.use((err: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error("Unhandled server error:", err);
+  if (res.headersSent) return;
+  res.status(500).json({
+    error: "Internal server error.",
+    details: err?.message || String(err)
+  });
+});
+
 // 5. Setup Vite dev or production static serving
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {

@@ -16,6 +16,7 @@ import BudgetAnalytics from "./components/BudgetAnalytics";
 import GrantMatcher from "./components/GrantMatcher";
 import ProposalDrafter from "./components/ProposalDrafter";
 import PrequalificationQuiz from "./components/PrequalificationQuiz";
+import { fetchApi } from "./lib/apiError";
 
 type TabType = "analytics" | "matcher" | "drafter" | "prequal";
 
@@ -36,20 +37,19 @@ export default function App() {
     setTestStatus("testing");
     setTestDetails("");
     setActiveProvider("");
-    try {
-      const res = await fetch("/api/health/gemini");
-      const data = await res.json();
-      if (res.ok && data.ok) {
-        setTestStatus("success");
-        setTestDetails(data.message || "Connected successfully!");
-        setActiveProvider(data.provider || "gemini");
-      } else {
-        setTestStatus("error");
-        setTestDetails(data.error || "Verification failed.");
-      }
-    } catch (err: any) {
+    const { ok, data, report } = await fetchApi("/api/health/gemini");
+    if (ok && data?.ok) {
+      setTestStatus("success");
+      setTestDetails(data.message || "Connected successfully!");
+      setActiveProvider(data.provider || "gemini");
+    } else {
       setTestStatus("error");
-      setTestDetails("Network error calling health diagnostic endpoint.");
+      // Prefer the app's own JSON error; otherwise fall back to the classified
+      // report (e.g. "Serverless function crashed" + HTTP status).
+      const detail =
+        data?.error ||
+        (report ? `${report.title} — HTTP ${report.httpStatus} ${report.httpStatusText}` : "Verification failed.");
+      setTestDetails(detail);
     }
   };
 
