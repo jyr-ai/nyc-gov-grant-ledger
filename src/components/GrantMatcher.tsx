@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Sparkles, Loader2, ArrowRight, CheckCircle2, AlertCircle, Landmark, Compass, HelpCircle } from "lucide-react";
+import { Sparkles, Loader2, ArrowRight, CheckCircle2, AlertCircle, Landmark, Compass, HelpCircle, Copy, Check, ServerCrash } from "lucide-react";
+import { fetchApi, formatReport, type ApiErrorReport } from "../lib/apiError";
 
 interface GrantMatcherProps {
   onSelectAgencyForDraft: (agency: string, orgName: string, mission: string) => void;
@@ -19,6 +20,8 @@ export default function GrantMatcher({ onSelectAgencyForDraft }: GrantMatcherPro
   const [error, setError] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const [needsKey, setNeedsKey] = useState(false);
+  const [errorReport, setErrorReport] = useState<ApiErrorReport | null>(null);
+  const [copied, setCopied] = useState(false);
   const [result, setResult] = useState<any | null>(null);
 
   const populations = [
@@ -74,8 +77,8 @@ export default function GrantMatcher({ onSelectAgencyForDraft }: GrantMatcherPro
     return () => clearInterval(interval);
   };
 
-  const handleMatch = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleMatch = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     if (!orgName.trim() || !mission.trim()) {
       setError("Please provide both an Organization Name and a clear Mission Statement.");
       setErrorDetails(null);
@@ -86,47 +89,49 @@ export default function GrantMatcher({ onSelectAgencyForDraft }: GrantMatcherPro
     setError(null);
     setErrorDetails(null);
     setNeedsKey(false);
+    setErrorReport(null);
     setResult(null);
 
     const cleanupInterval = runLoaderSimulation();
 
-    try {
-      const response = await fetch("/api/grant/match", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          orgName,
-          mission,
-          targetPopulation,
-          targetBoroughs,
-          budgetSize
-        })
-      });
+    const { ok, data, report } = await fetchApi("/api/grant/match", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        orgName,
+        mission,
+        targetPopulation,
+        targetBoroughs,
+        budgetSize
+      })
+    });
 
-      const data = await response.json();
-      cleanupInterval();
+    cleanupInterval();
+    setLoading(false);
 
-      if (!response.ok) {
-        if (data.needsKey) {
-          setNeedsKey(true);
-          setError(data.message || data.error);
-        } else {
-          setError(data.error || "Failed to process grant matching request.");
-        }
-        if (data.details) {
-          setErrorDetails(data.details);
-        }
-        return;
-      }
-
+    if (ok) {
       setResult(data);
-    } catch (err: any) {
-      cleanupInterval();
-      console.error("Match error:", err);
-      setError("An unexpected network error occurred while matching. Please verify that your development server is running.");
-      setErrorDetails(err.message || String(err));
-    } finally {
-      setLoading(false);
+      return;
+    }
+
+    // Failure: surface the real, structured error.
+    console.error("Match failed:", report);
+    if (data?.needsKey) {
+      setNeedsKey(true);
+      setError(data.message || data.error);
+      return;
+    }
+    setErrorReport(report);
+  };
+
+  const handleCopyReport = async () => {
+    if (!errorReport) return;
+    try {
+      await navigator.clipboard.writeText(formatReport(errorReport));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      /* clipboard unavailable */
     }
   };
 
@@ -453,6 +458,81 @@ export default function GrantMatcher({ onSelectAgencyForDraft }: GrantMatcherPro
                 </ul>
               </div>
 
+            </div>
+          ) : errorReport ? (
+            <div className="bg-[#F9F8F3] rounded-none border-2 border-red-600 shadow-[4px_4px_0px_0px_#dc2626] min-h-[450px]" id="matcher-error-report">
+              {/* Report header */}
+              <div className="bg-red-600 text-white px-5 py-3 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <ServerCrash className="w-5 h-5 shrink-0" />
+                  <span className="font-mono font-bold uppercase tracking-widest text-[11px]">AI Service Error Report</span>
+                </div>
+                <button
+                  onClick={handleCopyReport}
+                  className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider bg-white/15 hover:bg-white/25 px-2.5 py-1 border border-white/40 transition-colors cursor-pointer"
+                  title="Copy full report to clipboard"
+                >
+                  {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                  {copied ? "Copied" : "Copy report"}
+                </button>
+              </div>
+
+              <div className="p-5 space-y-4">
+                {/* Diagnosis */}
+                <div>
+                  <div className="text-lg font-serif font-black text-[#1A1A1A]">{errorReport.title}</div>
+                  <p className="text-xs text-[#333] leading-relaxed mt-1">{errorReport.explanation}</p>
+                </div>
+
+                {/* Facts grid */}
+                <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
+                  <div className="bg-[#F0EEE6] border border-[#1A1A1A]/15 px-3 py-2">
+                    <div className="text-[9px] uppercase tracking-wider text-[#777]">HTTP Status</div>
+                    <div className="font-bold text-[#1A1A1A]">
+                      {errorReport.httpStatus === 0 ? "No response" : `${errorReport.httpStatus} ${errorReport.httpStatusText}`}
+                    </div>
+                  </div>
+                  <div className="bg-[#F0EEE6] border border-[#1A1A1A]/15 px-3 py-2">
+                    <div className="text-[9px] uppercase tracking-wider text-[#777]">Duration</div>
+                    <div className="font-bold text-[#1A1A1A]">{errorReport.durationMs} ms</div>
+                  </div>
+                  <div className="bg-[#F0EEE6] border border-[#1A1A1A]/15 px-3 py-2">
+                    <div className="text-[9px] uppercase tracking-wider text-[#777]">Endpoint</div>
+                    <div className="font-bold text-[#1A1A1A] break-all">{errorReport.endpoint}</div>
+                  </div>
+                  <div className="bg-[#F0EEE6] border border-[#1A1A1A]/15 px-3 py-2">
+                    <div className="text-[9px] uppercase tracking-wider text-[#777]">Content-Type</div>
+                    <div className="font-bold text-[#1A1A1A] break-all">{errorReport.contentType || "(none)"}</div>
+                  </div>
+                </div>
+
+                {/* Server-provided message, when present */}
+                {(errorReport.serverMessage || errorReport.serverDetails) && (
+                  <div className="border-l-4 border-[#F27D26] bg-[#F0EEE6] px-4 py-2.5">
+                    <div className="text-[9px] uppercase tracking-wider font-mono font-bold text-[#777] mb-1">Server message</div>
+                    {errorReport.serverMessage && <div className="text-xs text-[#1A1A1A] font-medium">{errorReport.serverMessage}</div>}
+                    {errorReport.serverDetails && <div className="text-[11px] text-[#555] mt-1 font-mono break-words">{errorReport.serverDetails}</div>}
+                  </div>
+                )}
+
+                {/* Raw response body — the actual bytes from the server */}
+                <div>
+                  <div className="text-[9px] uppercase tracking-wider font-mono font-bold text-[#777] mb-1">Raw server response</div>
+                  <pre className="text-[10px] leading-relaxed bg-[#1A1A1A] text-[#E5E3DB] p-3 overflow-auto max-h-52 whitespace-pre-wrap break-words font-mono border border-[#1A1A1A]">
+{errorReport.rawBody || "(empty response body)"}
+                  </pre>
+                </div>
+
+                <div className="flex items-center gap-3 pt-1">
+                  <button
+                    onClick={handleMatch as any}
+                    className="text-[10px] font-mono font-bold uppercase tracking-wider bg-[#1A1A1A] text-white hover:bg-[#003B71] px-3 py-1.5 border-2 border-[#1A1A1A] transition-colors cursor-pointer"
+                  >
+                    Retry
+                  </button>
+                  <span className="text-[10px] text-[#777] font-mono">Tip: open <span className="font-bold">/api/debug</span> on the deployment for a live key + provider check.</span>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="bg-[#F9F8F3] rounded-none border border-dashed border-[#1A1A1A] p-12 flex flex-col items-center justify-center h-full min-h-[450px]" id="matcher-empty-card">
