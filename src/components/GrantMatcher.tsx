@@ -18,6 +18,7 @@ export default function GrantMatcher({ onSelectAgencyForDraft }: GrantMatcherPro
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const [needsKey, setNeedsKey] = useState(false);
   const [errorReport, setErrorReport] = useState<ApiErrorReport | null>(null);
   const [copied, setCopied] = useState(false);
@@ -80,11 +81,13 @@ export default function GrantMatcher({ onSelectAgencyForDraft }: GrantMatcherPro
     e?.preventDefault();
     if (!orgName.trim() || !mission.trim()) {
       setError("Please provide both an Organization Name and a clear Mission Statement.");
+      setErrorDetails(null);
       return;
     }
 
     setLoading(true);
     setError(null);
+    setErrorDetails(null);
     setNeedsKey(false);
     setErrorReport(null);
     setResult(null);
@@ -249,17 +252,25 @@ export default function GrantMatcher({ onSelectAgencyForDraft }: GrantMatcherPro
 
               {error && (
                 <div 
-                  className={`p-4 rounded-none text-xs flex gap-3 border-2 ${
+                  className={`p-4 rounded-none text-xs flex flex-col gap-2 border-2 ${
                     needsKey 
                       ? "bg-[#F0EEE6] border-[#F27D26] text-[#1A1A1A]" 
                       : "bg-[#F0EEE6] border-red-600 text-[#1A1A1A]"
                   }`}
                   id="matcher-form-error"
                 >
-                  <AlertCircle className="w-5 h-5 shrink-0 text-[#F27D26]" />
-                  <div className="leading-relaxed">
-                    <span className="font-bold">{needsKey ? "Key Action Required:" : "System Error:"}</span> {error}
+                  <div className="flex gap-3">
+                    <AlertCircle className="w-5 h-5 shrink-0 text-[#F27D26]" />
+                    <div className="leading-relaxed">
+                      <span className="font-bold">{needsKey ? "Key Action Required:" : "System Error:"}</span> {error}
+                    </div>
                   </div>
+                  {errorDetails && (
+                    <div className="mt-2 pl-8 text-[11px] font-mono text-rose-800 bg-white/55 p-2 border border-rose-300 overflow-x-auto whitespace-pre-wrap leading-relaxed select-text" id="matcher-error-details">
+                      <div className="font-bold uppercase tracking-wider text-[9px] mb-1 text-rose-900">Backend Debug Trace:</div>
+                      {errorDetails}
+                    </div>
+                  )}
                 </div>
               )}
 
