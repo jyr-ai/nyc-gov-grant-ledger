@@ -57,13 +57,22 @@ export interface TrendingTopic {
   description: string;
 }
 
+// Sourced from BetaNYC Schedule C reconciliation files (GRAND TOTAL + awards lines):
+//   FY27: data/fy27/schedule_c/fy27_schedule_c_reconciliation.txt (GRAND TOTAL 655,764,999; awards 6,118 rows)
+//   FY26: data/fy26/schedule_c/fy26_schedule_c_reconciliation.txt (GRAND TOTAL 665,080,821; awards 5,838 rows)
+// Average grant = GRAND TOTAL / awards count. Prev-year fields drive the YoY % change on the ledger cards.
 export const NYC_BUDGET_OVERVIEW = {
-  fiscalYear: "FY2025 - FY2026",
-  totalDiscretionary: 460000000,
-  totalAllocations: 5200,
-  averageGrant: 88500,
-  lastUpdated: "2026-06 Adopted Budget",
-  sourceRepo: "https://github.com/BetaNYC/New-York-City-Budget"
+  fiscalYear: "FY2027",
+  priorFiscalYear: "FY2026",
+  totalDiscretionary: 655764999,       // FY27 GRAND TOTAL
+  totalDiscretionaryPrev: 665080821,   // FY26 GRAND TOTAL
+  totalAllocations: 6118,              // FY27 awards rows
+  totalAllocationsPrev: 5838,          // FY26 awards rows
+  averageGrant: 107186,                // 655,764,999 / 6,118
+  averageGrantPrev: 113923,            // 665,080,821 / 5,838
+  lastUpdated: "FY2027 Adopted Schedule C (BetaNYC reconciliation)",
+  sourceRepo: "https://github.com/BetaNYC/New-York-City-Budget",
+  sourceFile: "data/fy27/schedule_c/fy27_schedule_c_reconciliation.txt"
 };
 
 // Colors updated to reflect NYC DSSG Palette

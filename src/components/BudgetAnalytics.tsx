@@ -54,6 +54,27 @@ const formatCurrency = (value: number) => {
   return `$${value.toLocaleString()}`;
 };
 
+// Year-over-year change badge for the ledger cards. Compares the current-year
+// value against the prior year's reconciliation figure.
+const ChangeBadge = ({ current, previous }: { current: number; previous: number }) => {
+  if (!previous) return null;
+  const pct = ((current - previous) / previous) * 100;
+  const up = pct >= 0;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-1.5 py-0.5 border ${
+        up
+          ? "text-emerald-800 border-emerald-300 bg-emerald-50"
+          : "text-rose-800 border-rose-300 bg-rose-50"
+      }`}
+      title={`${NYC_BUDGET_OVERVIEW.priorFiscalYear}: reconciliation baseline`}
+    >
+      <span aria-hidden>{up ? "▲" : "▼"}</span>
+      {up ? "+" : ""}{pct.toFixed(1)}% vs {NYC_BUDGET_OVERVIEW.priorFiscalYear}
+    </span>
+  );
+};
+
 // Custom Tooltip component for Nonprofit Sectors LineChart to guarantee ordered layout:
 // Social Services, Youth Services, Arts, Health, Environment
 const CustomSectorsTooltip = ({ active, payload, label }: any) => {
@@ -432,12 +453,15 @@ export default function BudgetAnalytics() {
               <Landmark className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-3xl font-serif font-black tracking-tight text-[#1A1A1A]">
-            {formatCurrency(NYC_BUDGET_OVERVIEW.totalDiscretionary)}
+          <div className="flex items-end justify-between gap-2 flex-wrap">
+            <div className="text-3xl font-serif font-black tracking-tight text-[#1A1A1A]">
+              {formatCurrency(NYC_BUDGET_OVERVIEW.totalDiscretionary)}
+            </div>
+            <ChangeBadge current={NYC_BUDGET_OVERVIEW.totalDiscretionary} previous={NYC_BUDGET_OVERVIEW.totalDiscretionaryPrev} />
           </div>
           <p className="text-[11px] text-[#555] mt-3 font-medium flex items-center gap-1.5 border-t border-[#E5E3DB] pt-2">
             <Info className="w-3.5 h-3.5 text-[#F27D26]" />
-            Official Schedule C Discretionary Budget
+            Schedule C Grand Total ({NYC_BUDGET_OVERVIEW.fiscalYear})
           </p>
         </div>
 
@@ -452,12 +476,15 @@ export default function BudgetAnalytics() {
               <Award className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-3xl font-serif font-black tracking-tight text-[#1A1A1A]">
-            {NYC_BUDGET_OVERVIEW.totalAllocations.toLocaleString()}
+          <div className="flex items-end justify-between gap-2 flex-wrap">
+            <div className="text-3xl font-serif font-black tracking-tight text-[#1A1A1A]">
+              {NYC_BUDGET_OVERVIEW.totalAllocations.toLocaleString()}
+            </div>
+            <ChangeBadge current={NYC_BUDGET_OVERVIEW.totalAllocations} previous={NYC_BUDGET_OVERVIEW.totalAllocationsPrev} />
           </div>
           <p className="text-[11px] text-[#555] mt-3 font-medium flex items-center gap-1.5 border-t border-[#E5E3DB] pt-2">
             <TrendingUp className="w-3.5 h-3.5 text-[#1A1A1A]" />
-            Grants across all five NYC boroughs
+            Schedule C awards across all five NYC boroughs
           </p>
         </div>
 
@@ -472,12 +499,15 @@ export default function BudgetAnalytics() {
               <FileSpreadsheet className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-3xl font-serif font-black tracking-tight text-[#1A1A1A]">
-            {formatCurrency(NYC_BUDGET_OVERVIEW.averageGrant)}
+          <div className="flex items-end justify-between gap-2 flex-wrap">
+            <div className="text-3xl font-serif font-black tracking-tight text-[#1A1A1A]">
+              {formatCurrency(NYC_BUDGET_OVERVIEW.averageGrant)}
+            </div>
+            <ChangeBadge current={NYC_BUDGET_OVERVIEW.averageGrant} previous={NYC_BUDGET_OVERVIEW.averageGrantPrev} />
           </div>
           <p className="text-[11px] text-[#555] mt-3 font-medium flex items-center gap-1.5 border-t border-[#E5E3DB] pt-2">
             <HelpCircle className="w-3.5 h-3.5 text-[#F27D26]" />
-            Varies dynamically by agency thresholds
+            Average award (Grand Total ÷ {NYC_BUDGET_OVERVIEW.totalAllocations.toLocaleString()} awards)
           </p>
         </div>
       </div>
