@@ -1,5 +1,29 @@
-// NYC and NYS Government Budget Aggregates and Data mapping
-// Reconciled based on BetaNYC Schedule C (Discretionary) Council Awards (FY2025 - FY2027)
+// NYC Council Schedule C Discretionary Funding — real, sourced data.
+//
+// Every figure in this file is derived from BetaNYC's public Schedule C dataset:
+//   https://github.com/BetaNYC/New-York-City-Budget/tree/main/data
+// Primary sources per fiscal year (FY09-FY27):
+//   data/fy{NN}/schedule_c/fy{NN}_schedule_c_reconciliation.txt  (category totals, GRAND TOTAL, award counts)
+//   data/fy{NN}/schedule_c/fy{NN}_schedule_c_awards.csv          (row-level awards: category, member, org, EIN, amount, agency — FY15+)
+//   data/fy{NN}/schedule_c/fy{NN}_schedule_c_initiatives.csv     (named initiative programs and totals)
+//   data/fy27/capital/fy27_capital_projects.csv                 (capital budget line items, with a real borough code)
+//
+// Data-quality notes (see BetaNYC's own data/QA-REPORT.md):
+// - "GRAND TOTAL" figures use the reconciliation file's "printed" (adopted) column, not the
+//   "initiatives" (working-paper) column, since the two differ by a reconciliation variance in
+//   some years (see RECONCILIATION_VARIANCES below).
+// - Award-level CSVs (agency, EIN, per-grant amount) only exist from FY15 onward. FY09-FY14 are
+//   "early-era" filings with category-level totals only — no award count or agency breakdown exists
+//   for those years, so those fields are left undefined rather than estimated.
+// - In every year's awards.csv, a large share of dollars carries no "agency" tag at all (recorded
+//   directly against a category/initiative rather than a specific city agency) — this is preserved
+//   honestly below as an "Unattributed" pool rather than force-assigned to an agency.
+// - The Schedule C dataset has no borough field for discretionary awards. The one real per-borough
+//   breakdown available in this repo is the FY27 capital budget file, which is used for the
+//   "Capital Budget by Borough" panel — a different budget instrument than Schedule C, labeled as such.
+// - Council district numbers below are parsed directly from each member's own real award records
+//   (e.g. "Council District 36" appearing in a program name); the borough each district sits in is
+//   standard, stable NYC Council district geography (public record, not sourced from this repo).
 
 export interface AgencyBudget {
   id: string;
@@ -20,7 +44,7 @@ export interface FocusAreaBudget {
   color: string;
 }
 
-export interface BoroughBudget {
+export interface CapitalBoroughBudget {
   name: string;
   totalFunds: number;
   allocationsCount: number;
@@ -37,13 +61,13 @@ export interface BudgetInitiative {
 export interface HistoricalTrend {
   year: string;
   totalFunds: number;
-  grantsCount: number;
-  avgGrant: number;
-  socialServices?: number;
-  youthEducation?: number;
-  artsCulture?: number;
-  healthWellness?: number;
-  environmentPublicSpace?: number;
+  grantsCount?: number;
+  avgGrant?: number;
+  socialServices: number;
+  youthEducation: number;
+  artsCulture: number;
+  healthWellness: number;
+  environmentPublicSpace: number;
 }
 
 export interface TrendingTopic {
@@ -57,479 +81,301 @@ export interface TrendingTopic {
   description: string;
 }
 
-// Sourced from BetaNYC Schedule C reconciliation files (GRAND TOTAL + awards lines):
+// Sourced from BetaNYC Schedule C reconciliation files (GRAND TOTAL "printed" column + awards lines):
 //   FY27: data/fy27/schedule_c/fy27_schedule_c_reconciliation.txt (GRAND TOTAL 655,764,999; awards 6,118 rows)
-//   FY26: data/fy26/schedule_c/fy26_schedule_c_reconciliation.txt (GRAND TOTAL 665,080,821; awards 5,838 rows)
+//   FY26: data/fy26/schedule_c/fy26_schedule_c_reconciliation.txt (GRAND TOTAL 665,080,021 printed; awards 5,838 rows)
 // Average grant = GRAND TOTAL / awards count. Prev-year fields drive the YoY % change on the ledger cards.
 export const NYC_BUDGET_OVERVIEW = {
   fiscalYear: "FY2027",
   priorFiscalYear: "FY2026",
-  totalDiscretionary: 655764999,       // FY27 GRAND TOTAL
-  totalDiscretionaryPrev: 665080821,   // FY26 GRAND TOTAL
+  totalDiscretionary: 655764999,       // FY27 GRAND TOTAL (printed)
+  totalDiscretionaryPrev: 665080021,   // FY26 GRAND TOTAL (printed)
   totalAllocations: 6118,              // FY27 awards rows
   totalAllocationsPrev: 5838,          // FY26 awards rows
   averageGrant: 107186,                // 655,764,999 / 6,118
-  averageGrantPrev: 113923,            // 665,080,821 / 5,838
+  averageGrantPrev: 113923,            // 665,080,021 / 5,838
   lastUpdated: "FY2027 Adopted Schedule C (BetaNYC reconciliation)",
   sourceRepo: "https://github.com/BetaNYC/New-York-City-Budget",
   sourceFile: "data/fy27/schedule_c/fy27_schedule_c_reconciliation.txt"
 };
 
-// Colors updated to reflect NYC DSSG Palette
-// DSSG Navy is #003B71 (or #01417A), Accent Orange is #F27D26. 
+// Real FY27 agency breakdown, computed directly from fy27_schedule_c_awards.csv (group by `agency`).
+// "Unattributed" is not a gap in this dataset — it is the largest single slice ($438.2M / 1,744 rows):
+// dollars recorded against a category/initiative in the source CSV with no specific city-agency tag.
+// Shown honestly as its own entry rather than folded into a named agency.
 export const AGENCY_BUDGET_DATA: AgencyBudget[] = [
   {
     id: "DYCD",
     name: "DYCD",
     fullName: "Department of Youth & Community Development",
-    totalFunds: 152400000,
-    allocationsCount: 1850,
-    averageAward: 82300,
-    color: "#003B71", // Navy
-    description: "Funds youth services, after-school programs (COMPASS, SONYC), literacy, runaway and homeless youth services, and community development programs.",
-    keyInitiatives: [
-      "COMPASS / SONYC Afterschool Programs",
-      "Youth Service Discretionary Funding",
-      "Adult Literacy Services",
-      "Community Development Initiatives"
-    ]
+    totalFunds: 63062289,
+    allocationsCount: 1515,
+    averageAward: Math.round(63062289 / 1515),
+    color: "#003B71",
+    description: "The single largest agency-tagged share of FY27 Schedule C awards: youth programming, after-school services, workforce/job training, and community development lines.",
+    keyInitiatives: ["Cultural After-School Adventure (CASA)", "Job Training and Placement Initiative", "Afterschool Enrichment Initiative", "Adult Literacy (NYC RISE)"]
   },
   {
     id: "DCLA",
     name: "DCLA",
     fullName: "Department of Cultural Affairs",
-    totalFunds: 88200000,
-    allocationsCount: 1200,
-    averageAward: 73500,
-    color: "#F27D26", // Orange
-    description: "Supports cultural institutions, community arts groups, museums, theaters, and visual arts programs that enrich the five boroughs.",
-    keyInitiatives: [
-      "Cultural Development Fund (CDF)",
-      "Cultural After-School Adventures (CASA)",
-      "Coalition of Theaters of Color",
-      "Local Arts & Community Festivals"
-    ]
+    totalFunds: 35103157,
+    allocationsCount: 1223,
+    averageAward: Math.round(35103157 / 1223),
+    color: "#F27D26",
+    description: "Cultural institutions, community arts groups, museums, theaters, and neighborhood arts programming.",
+    keyInitiatives: ["Cultural After-School Adventure (CASA)", "SU-CASA", "Coalition Theaters of Color"]
+  },
+  {
+    id: "DSS_HRA",
+    name: "DSS/HRA",
+    fullName: "Department of Social Services / Human Resources Administration",
+    totalFunds: 14268750,
+    allocationsCount: 474,
+    averageAward: Math.round(14268750 / 474),
+    color: "#8F8D83",
+    description: "Immigrant legal services, domestic violence support, homelessness prevention, and public-benefits navigation.",
+    keyInitiatives: ["Immigrant Legal Providers Support Network", "Domestic Violence and Empowerment (DoVE) Initiative", "Legal Services for Low-Income and Working-Class New Yorkers"]
   },
   {
     id: "DFTA",
-    name: "DFTA / Aging",
+    name: "DFTA",
     fullName: "Department for the Aging",
-    totalFunds: 64800000,
-    allocationsCount: 780,
-    averageAward: 83000,
-    color: "#8F8D83", // Muted Sand
-    description: "Provides senior center programs, home care, case management, elder abuse prevention, and nutritious senior meals across the city.",
-    keyInitiatives: [
-      "Senior Center Services & Programming",
-      "Naturally Occurring Retirement Communities (NORC)",
-      "Senior Meals & Food Programs",
-      "Elder Abuse & Case Management Discretionary"
-    ]
+    totalFunds: 12014748,
+    allocationsCount: 447,
+    averageAward: Math.round(12014748 / 447),
+    color: "#134074",
+    description: "Senior center programming, case management, and Naturally Occurring Retirement Community (NORC) support.",
+    keyInitiatives: ["Naturally Occurring Retirement Communities (NORCs)", "Older Adult Center Improvements", "Social Adult Day Care"]
   },
   {
-    id: "DOHMH",
+    id: "DHMH",
     name: "DOHMH",
     fullName: "Department of Health & Mental Hygiene",
-    totalFunds: 55200000,
-    allocationsCount: 520,
-    averageAward: 106100,
-    color: "#134074", // Light Navy
-    description: "Funds mental health clinics, developmental disability services, infant/maternal mortality initiatives, and local health navigation.",
-    keyInitiatives: [
-      "Mental Health Services for Underserved Populations",
-      "Developmental Disability Funding",
-      "Maternal and Infant Health Initiatives",
-      "Opioid Prevention & Local Harm Reduction"
-    ]
+    totalFunds: 7041750,
+    allocationsCount: 122,
+    averageAward: Math.round(7041750 / 122),
+    color: "#D46B13",
+    description: "Mental health services, opioid prevention, maternal/infant health, and community clinics.",
+    keyInitiatives: ["NYC 988 Crisis Intervention and Suicide Prevention Hotline", "Trauma Recovery Centers", "Opioid Prevention and Treatment"]
+  },
+  {
+    id: "DPR",
+    name: "DPR",
+    fullName: "Department of Parks & Recreation",
+    totalFunds: 6205934,
+    allocationsCount: 166,
+    averageAward: Math.round(6205934 / 166),
+    color: "#546A7B",
+    description: "Parks programming, greening initiatives, and neighborhood open-space maintenance.",
+    keyInitiatives: ["Parks Equity Initiative", "Swim Safety", "NYC Cleanup"]
+  },
+  {
+    id: "SBS",
+    name: "SBS",
+    fullName: "Department of Small Business Services",
+    totalFunds: 5890277,
+    allocationsCount: 159,
+    averageAward: Math.round(5890277 / 159),
+    color: "#B5B3A9",
+    description: "Small-business assistance, workforce development, and worker-cooperative support.",
+    keyInitiatives: ["Job Training and Placement Initiative", "Day Laborer Workforce Initiative", "MWBE Accelerator"]
   },
   {
     id: "HPD",
     name: "HPD",
     fullName: "Housing Preservation & Development",
-    totalFunds: 38500000,
-    allocationsCount: 340,
-    averageAward: 113200,
-    color: "#D46B13", // Deep Orange
-    description: "Supports affordable housing education, tenant legal advocacy, housing preservation outreach, and foreclosure prevention assistance.",
-    keyInitiatives: [
-      "Tenant Education & Anti-Harassment Outreach",
-      "Housing Preservation Initiative (HPI)",
-      "Community Land Trust Supports",
-      "Foreclosure Prevention Counseling"
-    ]
+    totalFunds: 2852054,
+    allocationsCount: 75,
+    averageAward: Math.round(2852054 / 75),
+    color: "#7B8A7A",
+    description: "Tenant advocacy, housing preservation outreach, and foreclosure-prevention counseling.",
+    keyInitiatives: ["Community Housing Preservation Strategies", "Stabilizing NYC", "Tax Lien Sale Outreach and Assistance"]
   },
   {
-    id: "ACS",
-    name: "ACS",
-    fullName: "Administration for Children's Services",
-    totalFunds: 28400000,
-    allocationsCount: 290,
-    averageAward: 97900,
-    color: "#546A7B", // Slate
-    description: "Supports child welfare advocacy, domestic violence prevention, early childhood education assistance, and youth justice alternatives.",
-    keyInitiatives: [
-      "Family Preventive Services",
-      "Domestic Violence Advocacy & Support",
-      "Early Childhood Care Enhancements",
-      "Alternative-to-Incarceration (ATI) for Youth"
-    ]
+    id: "OTHER",
+    name: "Other Agencies",
+    fullName: "DCWP, DSNY, DOE, CUNY, DHS, NYPD, FDNY, ACS, and 13 smaller agencies",
+    totalFunds: 20432588,
+    allocationsCount: 193,
+    averageAward: Math.round(20432588 / 193),
+    color: "#C84B31",
+    description: "Roll-up of every other agency-tagged FY27 award (each individually under $6M), including DCWP, DSNY, DOE, CUNY, HPD-adjacent clerks, DHS, NYPD, FDNY, ACS, NYPL, DOT, QBPL, and borough-president offices.",
+    keyInitiatives: ["CUNY Public Service Training Corps", "Community Composting (DSNY)", "Support for Arts Instruction (DOE)"]
   },
   {
-    id: "Others",
-    name: "Others",
-    fullName: "Parks, DHS, SBS, and other Agencies",
-    totalFunds: 32500000,
-    allocationsCount: 220,
-    averageAward: 147700,
-    color: "#B5B3A9", // Cool Gray
-    description: "Combines discretionary allocations for local parks programming, small business support services, and local homeless prevention.",
-    keyInitiatives: [
-      "Parks Community Programming & Maintenance",
-      "Small Business Services (SBS) Discretionary",
-      "Homeless Services Outreach",
-      "Worker Cooperative Development"
-    ]
+    id: "UNATTRIBUTED",
+    name: "Unattributed",
+    fullName: "Citywide Initiative Pool (no agency tag in source data)",
+    totalFunds: 438239865,
+    allocationsCount: 1744,
+    averageAward: Math.round(438239865 / 1744),
+    color: "#546A7B",
+    description: "The largest slice of FY27 Schedule C dollars — recorded against a funding category or named initiative in BetaNYC's award-level data, but without a specific city-agency tag. Includes most of the Speaker's Initiative and many multi-agency programs (e.g. \"A Greener NYC\", \"NYC Cleanup\") that span several agencies at once.",
+    keyInitiatives: ["Speaker's Initiative to Address Citywide Needs", "New York Immigrant Family Unity Project", "Alternatives to Incarceration and Reentry Programs"]
   }
 ];
 
+// Real FY27 category breakdown — every category from the Schedule C reconciliation's 25-row
+// summary table, sourced from fy27_schedule_c_reconciliation.txt (percentage of the real GRAND TOTAL).
 export const FOCUS_AREA_DATA: FocusAreaBudget[] = [
-  { name: "Youth Services & Education", totalFunds: 134500000, percentage: 29.2, color: "#003B71" },
-  { name: "Arts, Culture & History", totalFunds: 88200000, percentage: 19.2, color: "#F27D26" },
-  { name: "Senior Programs & Elder Care", totalFunds: 64800000, percentage: 14.1, color: "#8F8D83" },
-  { name: "Mental Health & Well-being", totalFunds: 42100000, percentage: 9.2, color: "#134074" },
-  { name: "Housing Preservation & Tenants", totalFunds: 38500000, percentage: 8.4, color: "#D46B13" },
-  { name: "Food Pantries & Security", totalFunds: 35400000, percentage: 7.7, color: "#C84B31" },
-  { name: "Workforce & Business Support", totalFunds: 26800000, percentage: 5.8, color: "#546A7B" },
-  { name: "Parks & Environmental Action", totalFunds: 29700000, percentage: 6.4, color: "#7B8A7A" }
+  { name: "Speaker's Initiative to Address Citywide Needs", totalFunds: 86522049, percentage: 13.2, color: "#003B71" },
+  { name: "Immigrant Services", totalFunds: 86417141, percentage: 13.2, color: "#F27D26" },
+  { name: "Community Development", totalFunds: 45225000, percentage: 6.9, color: "#8F8D83" },
+  { name: "Education", totalFunds: 43284300, percentage: 6.6, color: "#134074" },
+  { name: "Mental Health Services", totalFunds: 40767110, percentage: 6.2, color: "#D46B13" },
+  { name: "Cultural Organizations", totalFunds: 34350000, percentage: 5.2, color: "#546A7B" },
+  { name: "Criminal Justice Services", totalFunds: 33470153, percentage: 5.1, color: "#B5B3A9" },
+  { name: "Small Business Services and Workforce Development", totalFunds: 33252902, percentage: 5.1, color: "#7B8A7A" },
+  { name: "Older Adult Services", totalFunds: 31990323, percentage: 4.9, color: "#C84B31" },
+  { name: "All Other Categories (16 lines)", totalFunds: 220486021, percentage: 33.6, color: "#D9A406" }
 ];
 
-export const BOROUGH_DATA: BoroughBudget[] = [
-  { name: "Brooklyn", totalFunds: 128400000, allocationsCount: 1450 },
-  { name: "Queens", totalFunds: 112600000, allocationsCount: 1280 },
-  { name: "Manhattan", totalFunds: 94800000, allocationsCount: 1110 },
-  { name: "Bronx", totalFunds: 86200000, allocationsCount: 990 },
-  { name: "Staten Island", totalFunds: 22400000, allocationsCount: 260 },
-  { name: "Citywide Initiatives", totalFunds: 15600000, allocationsCount: 110 }
+// Real FY27 capital budget by borough — data/fy27/capital/fy27_capital_projects.csv, grouped by the
+// file's own `boro` field (K/Q/M/X/R). This is capital construction funding, a different budget
+// instrument than Schedule C discretionary awards (which has no borough field in the source data),
+// so it is labeled distinctly below rather than presented as a Schedule C borough breakdown.
+export const CAPITAL_BY_BOROUGH: CapitalBoroughBudget[] = [
+  { name: "Manhattan", totalFunds: 303755000, allocationsCount: 379 },
+  { name: "Queens", totalFunds: 265423000, allocationsCount: 348 },
+  { name: "Brooklyn", totalFunds: 239109000, allocationsCount: 341 },
+  { name: "Bronx", totalFunds: 172733000, allocationsCount: 217 },
+  { name: "Staten Island", totalFunds: 82139000, allocationsCount: 101 },
+  { name: "Citywide", totalFunds: 356000, allocationsCount: 2 }
 ];
 
+// Real named initiatives, cross-referenced between fy27_schedule_c_initiatives.csv (program totals)
+// and fy27_schedule_c_awards.csv (award-level $ range, used for "Average Grant").
 export const BUDGET_INITIATIVES: BudgetInitiative[] = [
   {
     name: "Cultural After-School Adventures (CASA)",
-    agency: "DCLA",
-    description: "Dedicated funding to support arts and cultural programs in public schools after school. Each council member allocates specific CASA awards.",
-    averageGrant: "$10,000 - $25,000",
-    fundingLevel: "High Opportunity"
+    agency: "DCLA / DYCD",
+    description: "781 real FY27 awards, every one exactly $20,000 — funds arts and cultural programs in public schools after school, one CASA award per council member.",
+    averageGrant: "$20,000 (fixed)",
+    fundingLevel: "Very High Opportunity (781 awards)"
   },
   {
-    name: "Youth Services Discretionary",
-    agency: "DYCD",
-    description: "General funding for youth programming, sports programs, STEM afterschool, and academic enrichment in community centers.",
-    averageGrant: "$5,000 - $35,000",
-    fundingLevel: "Very High Opportunity"
+    name: "NYC Cleanup",
+    agency: "DPR / DSNY / DCLA / DYCD / DOE / SBS",
+    description: "Multi-agency neighborhood cleanup and beautification program; 197 real FY27 awards ranging from small community grants to larger district-wide contracts.",
+    averageGrant: "$5,000 - $280,000",
+    fundingLevel: "High Opportunity (197 awards)"
   },
   {
-    name: "Cultural Development Fund (CDF)",
-    agency: "DCLA",
-    description: "Comprehensive grant system for non-profit cultural organizations of all sizes providing cultural activities open to the public.",
-    averageGrant: "$15,000 - $120,000",
-    fundingLevel: "High Opportunity"
+    name: "Naturally Occurring Retirement Communities (NORCs)",
+    agency: "DFTA",
+    description: "Supportive service programs in housing complexes with high densities of older adults; 35 real FY27 awards.",
+    averageGrant: "$10,000 - $2,078,463",
+    fundingLevel: "Moderate Opportunity (35 awards)"
   },
   {
-    name: "Naturally Occurring Retirement Communities (NORC)",
-    agency: "DFTA / Aging",
-    description: "Supportive service programs in housing complexes with high densities of older adults, helping them age in place safely.",
-    averageGrant: "$50,000 - $180,000",
-    fundingLevel: "Moderate (Contractual)"
+    name: "Legal Services for Low-Income and Working-Class New Yorkers",
+    agency: "DSS/HRA",
+    description: "Civil legal aid and tenant/worker advocacy organizations; 19 real FY27 awards.",
+    averageGrant: "$30,000 - $2,100,000",
+    fundingLevel: "Moderate Opportunity (19 awards)"
   },
   {
-    name: "Housing Preservation Initiative (HPI)",
-    agency: "HPD",
-    description: "Grants to community-based organizations performing tenant advocacy, housing code enforcement reporting, and landlord negotiation.",
-    averageGrant: "$25,000 - $75,000",
-    fundingLevel: "Moderate Opportunity"
-  },
-  {
-    name: "Access to Healthcare Initiatives",
-    agency: "DOHMH",
-    description: "Community health education, nutrition assistance, localized clinics, and health coverage navigation programs in underserved zip codes.",
-    averageGrant: "$15,000 - $50,000",
-    fundingLevel: "High Opportunity"
+    name: "Job Training and Placement Initiative",
+    agency: "DYCD / SBS",
+    description: "Workforce development and job placement programs; 9 real FY27 awards.",
+    averageGrant: "$25,000 - $5,255,000",
+    fundingLevel: "Selective Opportunity (9 awards)"
   }
 ];
 
-// Historical Timeline of Discretionary Budget Totals (BetaNYC Open Data span)
+// Real 19-year historical timeline (FY09-FY27), parsed from every year's Schedule C reconciliation
+// file. `totalFunds` is the GRAND TOTAL (printed/adopted column) for every year — 100% real, 100%
+// of the time. `grantsCount`/`avgGrant` are populated only for FY20-FY27, where award-level CSVs
+// exist and their row counts represent a meaningful share of that year's total dollars; FY09-FY19
+// either have no award-level file at all (FY09-14, "early-era" filings) or an award-level file that
+// only captures a small EIN-anchored fraction of that year's total (FY15-19), so a per-grant average
+// computed from it would be misleading and is left undefined rather than estimated.
+// Sector splits (socialServices/youthEducation/artsCulture/healthWellness/environmentPublicSpace) are
+// a full, 100%-reconciled partition of every year's real category table into 5 buckets — every
+// category name across all 19 years (including legacy names like "Senior Services" or "Youth and
+// Community Development") is mapped to exactly one bucket; see BetaNYC/New-York-City-Budget analysis.
 export const HISTORICAL_TREND_DATA: HistoricalTrend[] = [
-  {
-    year: "FY2010",
-    totalFunds: 245000000,
-    grantsCount: 3120,
-    avgGrant: 78500,
-    socialServices: 85750000,
-    youthEducation: 61250000,
-    artsCulture: 39200000,
-    healthWellness: 34300000,
-    environmentPublicSpace: 24500000
-  },
-  {
-    year: "FY2011",
-    totalFunds: 260000000,
-    grantsCount: 3250,
-    avgGrant: 80000,
-    socialServices: 91000000,
-    youthEducation: 65000000,
-    artsCulture: 41600000,
-    healthWellness: 36400000,
-    environmentPublicSpace: 26000000
-  },
-  {
-    year: "FY2012",
-    totalFunds: 275000000,
-    grantsCount: 3410,
-    avgGrant: 80600,
-    socialServices: 96250000,
-    youthEducation: 68750000,
-    artsCulture: 44000000,
-    healthWellness: 38500000,
-    environmentPublicSpace: 27500000
-  },
-  {
-    year: "FY2013",
-    totalFunds: 290000000,
-    grantsCount: 3580,
-    avgGrant: 81000,
-    socialServices: 101500000,
-    youthEducation: 72500000,
-    artsCulture: 46400000,
-    healthWellness: 40600000,
-    environmentPublicSpace: 29000000
-  },
-  {
-    year: "FY2014",
-    totalFunds: 310000000,
-    grantsCount: 3750,
-    avgGrant: 82600,
-    socialServices: 108500000,
-    youthEducation: 77500000,
-    artsCulture: 49600000,
-    healthWellness: 43400000,
-    environmentPublicSpace: 31000000
-  },
-  {
-    year: "FY2015",
-    totalFunds: 325000000,
-    grantsCount: 3900,
-    avgGrant: 83300,
-    socialServices: 113750000,
-    youthEducation: 81250000,
-    artsCulture: 52000000,
-    healthWellness: 45500000,
-    environmentPublicSpace: 32500000
-  },
-  {
-    year: "FY2016",
-    totalFunds: 340000000,
-    grantsCount: 4100,
-    avgGrant: 82900,
-    socialServices: 119000000,
-    youthEducation: 85000000,
-    artsCulture: 54400000,
-    healthWellness: 47600000,
-    environmentPublicSpace: 34000000
-  },
-  {
-    year: "FY2017",
-    totalFunds: 355000000,
-    grantsCount: 4250,
-    avgGrant: 83500,
-    socialServices: 124250000,
-    youthEducation: 88750000,
-    artsCulture: 56800000,
-    healthWellness: 49700000,
-    environmentPublicSpace: 35500000
-  },
-  {
-    year: "FY2018",
-    totalFunds: 370000000,
-    grantsCount: 4420,
-    avgGrant: 83700,
-    socialServices: 129500000,
-    youthEducation: 92500000,
-    artsCulture: 59200000,
-    healthWellness: 51800000,
-    environmentPublicSpace: 37000000
-  },
-  {
-    year: "FY2019",
-    totalFunds: 380000000,
-    grantsCount: 4550,
-    avgGrant: 83500,
-    socialServices: 133000000,
-    youthEducation: 95000000,
-    artsCulture: 60800000,
-    healthWellness: 53200000,
-    environmentPublicSpace: 38000000
-  },
-  {
-    year: "FY2020",
-    totalFunds: 385000000,
-    grantsCount: 4620,
-    avgGrant: 83300,
-    socialServices: 142450000,
-    youthEducation: 92400000,
-    artsCulture: 57750000,
-    healthWellness: 57750000,
-    environmentPublicSpace: 34650000
-  },
-  {
-    year: "FY2021",
-    totalFunds: 360000000,
-    grantsCount: 4180,
-    avgGrant: 86100,
-    socialServices: 144000000,
-    youthEducation: 79200000,
-    artsCulture: 39600000,
-    healthWellness: 68400000,
-    environmentPublicSpace: 28800000
-  },
-  {
-    year: "FY2022",
-    totalFunds: 395000000,
-    grantsCount: 4720,
-    avgGrant: 83700,
-    socialServices: 150100000,
-    youthEducation: 94800000,
-    artsCulture: 51350000,
-    healthWellness: 63200000,
-    environmentPublicSpace: 35550000
-  },
-  {
-    year: "FY2023",
-    totalFunds: 415000000,
-    grantsCount: 4950,
-    avgGrant: 83800,
-    socialServices: 149400000,
-    youthEducation: 107900000,
-    artsCulture: 62250000,
-    healthWellness: 58100000,
-    environmentPublicSpace: 37350000
-  },
-  {
-    year: "FY2024",
-    totalFunds: 435000000,
-    grantsCount: 5080,
-    avgGrant: 85600,
-    socialServices: 152250000,
-    youthEducation: 117450000,
-    artsCulture: 65250000,
-    healthWellness: 60900000,
-    environmentPublicSpace: 39150000
-  },
-  {
-    year: "FY2025",
-    totalFunds: 450000000,
-    grantsCount: 5200,
-    avgGrant: 86500,
-    socialServices: 157500000,
-    youthEducation: 121500000,
-    artsCulture: 67500000,
-    healthWellness: 63000000,
-    environmentPublicSpace: 40500000
-  },
-  {
-    year: "FY2026",
-    totalFunds: 460000000,
-    grantsCount: 5200,
-    avgGrant: 88500,
-    socialServices: 161000000,
-    youthEducation: 124200000,
-    artsCulture: 69000000,
-    healthWellness: 64400000,
-    environmentPublicSpace: 41400000
-  },
-  {
-    year: "FY2027 (Est)",
-    totalFunds: 475000000,
-    grantsCount: 5350,
-    avgGrant: 88700,
-    socialServices: 166250000,
-    youthEducation: 128250000,
-    artsCulture: 71250000,
-    healthWellness: 66500000,
-    environmentPublicSpace: 42750000
-  }
+  { year: "FY2009", totalFunds: 363383804, socialServices: 66729055, youthEducation: 206270000, artsCulture: 21800000, healthWellness: 67584749, environmentPublicSpace: 1000000 },
+  { year: "FY2010", totalFunds: 313771129, socialServices: 81721129, youthEducation: 91197000, artsCulture: 71898000, healthWellness: 67955000, environmentPublicSpace: 1000000 },
+  { year: "FY2011", totalFunds: 317676672, socialServices: 131759422, youthEducation: 82245000, artsCulture: 66827000, healthWellness: 29024750, environmentPublicSpace: 7820500 },
+  { year: "FY2012", totalFunds: 276092050, socialServices: 118211760, youthEducation: 47520000, artsCulture: 96348790, healthWellness: 6191000, environmentPublicSpace: 7820500 },
+  { year: "FY2013", totalFunds: 312874891, socialServices: 140834154, youthEducation: 94438237, artsCulture: 33800000, healthWellness: 24582500, environmentPublicSpace: 19220000 },
+  { year: "FY2014", totalFunds: 304793605, socialServices: 156147004, youthEducation: 85325000, artsCulture: 28749000, healthWellness: 30135601, environmentPublicSpace: 4437000 },
+  { year: "FY2015", totalFunds: 233438000, socialServices: 87460000, youthEducation: 102683000, artsCulture: 14600000, healthWellness: 13295000, environmentPublicSpace: 15400000 },
+  { year: "FY2016", totalFunds: 333886574, socialServices: 232953919, youthEducation: 17052000, artsCulture: 18821000, healthWellness: 48131855, environmentPublicSpace: 16927800 },
+  { year: "FY2017", totalFunds: 279908300, socialServices: 180699881, youthEducation: 33096000, artsCulture: 27314500, healthWellness: 17107334, environmentPublicSpace: 21690585 },
+  { year: "FY2018", totalFunds: 302086000, socialServices: 191746559, youthEducation: 31266000, artsCulture: 36199500, healthWellness: 20795800, environmentPublicSpace: 22078141 },
+  { year: "FY2019", totalFunds: 338301000, socialServices: 218362097, youthEducation: 32195000, artsCulture: 28422879, healthWellness: 46068024, environmentPublicSpace: 13253000 },
+  { year: "FY2020", totalFunds: 404372774, grantsCount: 2841, avgGrant: 142335, socialServices: 258295521, youthEducation: 50970000, artsCulture: 31582879, healthWellness: 50286024, environmentPublicSpace: 13238350 },
+  { year: "FY2021", totalFunds: 304268931, grantsCount: 1810, avgGrant: 168104, socialServices: 187762635, youthEducation: 20850256, artsCulture: 41997724, healthWellness: 41371716, environmentPublicSpace: 12286600 },
+  { year: "FY2022", totalFunds: 465728895, grantsCount: 1492, avgGrant: 312151, socialServices: 325305234, youthEducation: 21550000, artsCulture: 35797879, healthWellness: 54512432, environmentPublicSpace: 28563350 },
+  { year: "FY2023", totalFunds: 486446095, grantsCount: 1848, avgGrant: 263228, socialServices: 247389337, youthEducation: 83928217, artsCulture: 49595000, healthWellness: 81040041, environmentPublicSpace: 24493500 },
+  { year: "FY2024", totalFunds: 471875565, grantsCount: 5368, avgGrant: 87905, socialServices: 256683683, youthEducation: 61736169, artsCulture: 50050000, healthWellness: 78185113, environmentPublicSpace: 25220600 },
+  { year: "FY2025", totalFunds: 534913682, grantsCount: 5646, avgGrant: 94742, socialServices: 306066473, youthEducation: 64436169, artsCulture: 50050000, healthWellness: 82895440, environmentPublicSpace: 31465600 },
+  { year: "FY2026", totalFunds: 665080021, grantsCount: 5838, avgGrant: 113923, socialServices: 406587864, youthEducation: 94653217, artsCulture: 34350000, healthWellness: 98495440, environmentPublicSpace: 30993500 },
+  { year: "FY2027", totalFunds: 655764999, grantsCount: 6118, avgGrant: 107186, socialServices: 395837843, youthEducation: 94513217, artsCulture: 34350000, healthWellness: 99320439, environmentPublicSpace: 31743500 }
 ];
 
-// Trending Funding Topics (BetaNYC PDF Extraction analysis)
+// Real category-level growth, FY2020 -> FY2026, parsed directly from each year's reconciliation
+// category table (fy20/fy22/fy24/fy26_schedule_c_reconciliation.txt).
 export const TRENDING_TOPICS_DATA: TrendingTopic[] = [
   {
-    topic: "Food Security & Emergency Pantries",
+    topic: "Immigrant Services",
     category: "Social Services",
-    fy2020: 16.5,
-    fy2022: 24.2,
-    fy2024: 31.0,
-    fy2026: 35.4,
-    growthRate: "+114.5%",
-    description: "Rapid expansion of city council emergency food allocations to tackle direct localized supply issues."
+    fy2020: 12.5, fy2022: 13.6, fy2024: 30.8, fy2026: 86.1,
+    growthRate: "+589.3%",
+    description: "Real Schedule C category total. Grew from $12.5M (FY20) to $86.1M (FY26) as immigrant legal-services and rapid-response initiatives expanded sharply."
   },
   {
-    topic: "STEM & Digital Literacy Access",
-    category: "Youth Services",
-    fy2020: 12.0,
-    fy2022: 17.5,
-    fy2024: 23.4,
-    fy2026: 28.5,
-    growthRate: "+137.5%",
-    description: "Strong structural pivot toward free code camps, robotics workshops, and math tutoring programs."
+    topic: "Food Initiatives",
+    category: "Social Services",
+    fy2020: 2.5, fy2022: 25.7, fy2024: 10.9, fy2026: 27.0,
+    growthRate: "+977.5%",
+    description: "Real Schedule C category total. Rose from $2.5M (FY20) to $27.0M (FY26), reflecting expanded food-pantry and community-food-access funding."
   },
   {
-    topic: "Alternative-to-Incarceration (ATI)",
-    category: "Youth & Safety",
-    fy2020: 8.2,
-    fy2022: 12.5,
-    fy2024: 17.8,
-    fy2026: 22.4,
-    growthRate: "+173.2%",
-    description: "Sustained budget support for restorative youth programs, counseling, and peer mediation circles."
+    topic: "Mental Health Services",
+    category: "Health & Wellness",
+    fy2020: 5.1, fy2022: 5.1, fy2024: 24.5, fy2026: 40.6,
+    growthRate: "+694.8%",
+    description: "Real Schedule C category total. Jumped from $5.1M (FY20/FY22) to $40.6M (FY26) with new crisis-hotline and youth mental-health lines."
   },
   {
-    topic: "Maternal & Infant Health Navigation",
-    category: "Mental Health & Well-being",
-    fy2020: 5.4,
-    fy2022: 8.9,
-    fy2024: 12.1,
-    fy2026: 15.6,
-    growthRate: "+188.9%",
-    description: "Targeted support for local doulas and health guides to reduce disparities in low-income zones."
-  },
-  {
-    topic: "Cultural Equity & Small Festivals",
+    topic: "Cultural Organizations",
     category: "Arts & Culture",
-    fy2020: 38.0,
-    fy2022: 43.5,
-    fy2024: 48.0,
-    fy2026: 52.8,
-    growthRate: "+38.9%",
-    description: "Decentralized local neighborhood festivals and cultural workshops sponsored directly by members."
+    fy2020: 12.3, fy2022: 13.9, fy2024: 34.4, fy2026: 34.4,
+    growthRate: "+180.3%",
+    description: "Real Schedule C category total. Grew from $12.3M (FY20) to $34.4M (FY24-26), where it has held steady for two consecutive fiscal years."
+  },
+  {
+    topic: "Criminal Justice Services",
+    category: "Public Safety",
+    fy2020: 31.9, fy2022: 33.9, fy2024: 28.7, fy2026: 33.4,
+    growthRate: "+4.8%",
+    description: "Real Schedule C category total. The most stable of the tracked categories — funding has stayed in the $29M-$34M range every year since FY20."
   }
 ];
 
-// Reconciled Council Members & Districts
+// Real NYC Council members who sponsored FY27 Schedule C awards (data/fy27/schedule_c/fy27_schedule_c_awards.csv,
+// `member` column, ranked by total sponsored dollars). District numbers are parsed directly from each
+// member's own award program text (e.g. "...- Council District 36"); borough is standard NYC Council
+// district geography (public record — not itself a field in the BetaNYC dataset).
 export interface CouncilMemberRoster {
   name: string;
   district: number;
   borough: string;
-  politicalAffiliation: string;
 }
 
 export const COUNCIL_ROSTER: CouncilMemberRoster[] = [
-  { name: "Chi Ossé", district: 36, borough: "Brooklyn", politicalAffiliation: "Democratic" },
-  { name: "Gale Brewer", district: 6, borough: "Manhattan", politicalAffiliation: "Democratic" },
-  { name: "Justin Brannan", district: 43, borough: "Brooklyn", politicalAffiliation: "Democratic" },
-  { name: "Keith Powers", district: 4, borough: "Manhattan", politicalAffiliation: "Democratic" },
-  { name: "Tiffany Cabán", district: 22, borough: "Queens", politicalAffiliation: "Democratic" }
+  { name: "Osse", district: 36, borough: "Brooklyn" },
+  { name: "Brewer", district: 6, borough: "Manhattan" },
+  { name: "Caban", district: 22, borough: "Queens" },
+  { name: "Restler", district: 33, borough: "Brooklyn" },
+  { name: "Brooks-Powers", district: 31, borough: "Queens" }
 ];
 
-// Reconciled Organizations with EINs
+// Real organizations that received FY27 Schedule C awards, with real EINs (data/fy27/schedule_c/fy27_schedule_c_awards.csv).
 export interface OrgProfile {
   name: string;
   ein: string;
@@ -538,277 +384,224 @@ export interface OrgProfile {
 }
 
 export const ORG_PROFILES: OrgProfile[] = [
-  { name: "Brooklyn Youth Code Guild", ein: "11-2233445", borough: "Brooklyn", primaryMission: "Free coding camps and digital portfolios for high school youth." },
-  { name: "Flatbush YMCA", ein: "22-3344556", borough: "Brooklyn", primaryMission: "Community wellness, recreation, and after-school tutoring programs." },
-  { name: "Bronx Arts Ensemble", ein: "33-4455667", borough: "Bronx", primaryMission: "Provides music classes, chamber concerts, and public school arts training." },
-  { name: "New York Botanical Garden", ein: "44-5566778", borough: "Bronx", primaryMission: "Horticulture research, environmental displays, and public education." },
-  { name: "El Puente de Williamsburg", ein: "55-6677889", borough: "Brooklyn", primaryMission: "Community activism, theater, youth leadership, and local murals." }
+  { name: "Girls Who Code, Inc.", ein: "30-0728021", borough: "Citywide", primaryMission: "Coding education and computer-science pathways for girls and young women." },
+  { name: "Bronx River Art Center, Inc.", ein: "13-3261148", borough: "Bronx", primaryMission: "Community arts education, exhibitions, and youth arts programming in the Bronx." },
+  { name: "SCAN-Harbor, Inc.", ein: "13-2912963", borough: "Bronx / Multi-Borough", primaryMission: "Youth development, school-based programming, and community-center services." },
+  { name: "Doe Fund, Inc., The", ein: "13-3412540", borough: "Citywide", primaryMission: "Workforce development and transitional employment (Ready, Willing & Able) for people rebuilding self-sufficiency." },
+  { name: "Open Space Alliance for North Brooklyn, Inc.", ein: "01-0849087", borough: "Brooklyn", primaryMission: "Parks stewardship and open-space programming in North Brooklyn (McCarren Park and beyond)." }
 ];
 
-// Reconciled Initiatives with Legislative metadata
-export interface InitiativeMetadata {
-  name: string;
-  agency: string;
-  legistarFile: string;
-  adoptionResolution: string;
-  committee: string;
-}
-
-export const INITIATIVES_METADATA: InitiativeMetadata[] = [
-  {
-    name: "Cultural After-School Adventures (CASA)",
-    agency: "DCLA",
-    legistarFile: "2025/1102",
-    adoptionResolution: "Res. 1102-2025",
-    committee: "Finance Committee / Committee on Cultural Affairs"
-  },
-  {
-    name: "NYC Initiative for Food Fitness and Health",
-    agency: "DOHMH",
-    legistarFile: "2025/1105",
-    adoptionResolution: "Res. 1105-2025",
-    committee: "Joint Committee on Health and Land Use"
-  },
-  {
-    name: "Adult Literacy Initiative",
-    agency: "DYCD",
-    legistarFile: "2025/1098",
-    adoptionResolution: "Res. 1098-2025",
-    committee: "Committee on Education"
-  },
-  {
-    name: "Alternative-to-Incarceration (ATI) Initiative",
-    agency: "ACS / Mayoralty",
-    legistarFile: "2026/0233",
-    adoptionResolution: "Res. 0233-2026",
-    committee: "Committee on Public Safety"
-  }
-];
-
-// Detailed response generator structures for the Interactive Historical Audit Desk
+// Detailed response generator structures for the Interactive Historical Audit Desk.
+// Every organization, EIN, council member, dollar amount, and program description below is pulled
+// directly from BetaNYC's real award-level CSVs (FY15-FY27) or the FY27 capital-projects CSV — none
+// of it is invented. Two features present in earlier drafts of this app had no basis anywhere in the
+// source repository and have been removed rather than replaced with equally fake "real-looking" data:
+// per-organization mid-year "Transparency Resolution" rescission narratives, and Legistar/legislative
+// file numbers. In their place, Q3 now surfaces the real reconciliation variances BetaNYC's own
+// parser flags between each year's "initiatives" worksheet and the "printed" adopted Schedule C.
 export const AUDIT_RESPONSES = {
-  // 1. CM FY2026 Expense allocations
-  cmExpense2026: {
-    "Chi Ossé": [
-      { organization: "Brooklyn Youth Code Guild", ein: "11-2233445", purpose: "Coding camps & STEM tutorials in Flatbush", amount: 35000, agency: "DYCD", status: "Active (Modified via Res 1042-A)" },
-      { organization: "El Puente de Williamsburg", ein: "55-6677889", purpose: "Youth theater and public art murals", amount: 20000, agency: "DCLA", status: "Active (Approved)" },
-      { organization: "Flatbush YMCA", ein: "22-3344556", purpose: "Youth recreation & swim lessons", amount: 15000, agency: "DYCD", status: "Active (Modified via Res 1042-A)" }
+  // 1. Real FY27 member-item awards sponsored by each roster member (top 5 by dollar amount).
+  cmExpenseCurrent: {
+    "Osse": [
+      { organization: "Association of Community Employment Programs for the Homeless, Inc.", ein: "13-3846431", purpose: "Council District 36", amount: 110000, agency: "DYCD" },
+      { organization: "Justice Innovation, Inc.", ein: "85-2810883", purpose: "Council District 36", amount: 85000, agency: "DSS/HRA" },
+      { organization: "Bridge Street Development Corporation", ein: "11-3250772", purpose: "Quincy Senior Center - Council District 36", amount: 77500, agency: "DFTA" },
+      { organization: "Council on the Environment, Inc.", ein: "13-2765465", purpose: "Fresh Produce Box Program - Council District 36", amount: 50000, agency: "DYCD" },
+      { organization: "Urban Justice Center", ein: "13-3442022", purpose: "Council District 36", amount: 45000, agency: "DSS/HRA" }
     ],
-    "Gale Brewer": [
-      { organization: "New York Botanical Garden", ein: "44-5566778", purpose: "Horticulture training & community botany workshops", amount: 50000, agency: "DCLA", status: "Active (Approved)" },
-      { organization: "Lincoln Center for the Performing Arts", ein: "99-1122334", purpose: "Free outdoor summer concerts", amount: 75000, agency: "DCLA", status: "Active (Approved)" },
-      { organization: "West Side Senior Services", ein: "88-7766554", purpose: "Senior meals distribution & check-ins", amount: 25000, agency: "DFTA / Aging", status: "Active (Approved)" }
+    "Caban": [
+      { organization: "Association of Community Employment Programs for the Homeless, Inc.", ein: "13-3846431", purpose: "Sanitation Services - Council District 22", amount: 260000, agency: "DYCD" },
+      { organization: "Spanish Speaking Elderly Council - RAICES", ein: "11-2730462", purpose: "NYCHA Astoria Houses Campus - Older Adult Services", amount: 48000, agency: "DFTA" },
+      { organization: "Child Center of NY, Inc., The", ein: "11-1733454", purpose: "Domestic Violence & Empowerment Programming - Council District 22", amount: 45000, agency: "DSS/HRA" },
+      { organization: "Arab-American Family Support Center, Inc., The", ein: "11-3167245", purpose: "Anti-Violence Programming - Council District 22", amount: 40000, agency: "DSS/HRA" },
+      { organization: "Violence Intervention Program", ein: "13-3540337", purpose: "Restorative Justice Program - Council District 22", amount: 30000, agency: "DYCD" }
     ],
-    "Justin Brannan": [
-      { organization: "Bay Ridge Community Council", ein: "77-8899001", purpose: "Local youth civic engagement forums", amount: 25000, agency: "DYCD", status: "Active (Approved)" },
-      { organization: "Guild for Exceptional Children", ein: "66-5544332", purpose: "Special needs daytime assistance activities", amount: 45000, agency: "DOHMH", status: "Active (Approved)" },
-      { organization: "South Brooklyn Health Network", ein: "55-4433221", purpose: "Mobile community health checks & screening", amount: 55000, agency: "DOHMH", status: "Active (Approved)" }
+    "Brewer": [
+      { organization: "Goddard Riverside Community Center", ein: "13-1893908", purpose: "Greenkeepers & TOP Opportunities - Council District 6", amount: 250000, agency: "DYCD" },
+      { organization: "American Museum of Natural History", ein: "13-6162659", purpose: "Cultural Workforce Pathways", amount: 225000, agency: "DCLA" },
+      { organization: "Goddard Riverside Community Center", ein: "13-1893908", purpose: "Creating Opportunities for Amsterdam", amount: 100000, agency: "DYCD" }
     ],
-    "Keith Powers": [
-      { organization: "Lincoln Center for the Performing Arts", ein: "99-1122334", purpose: "Midtown youth theater initiatives", amount: 40000, agency: "DCLA", status: "Active (Approved)" },
-      { organization: "West Side Senior Services", ein: "88-7766554", purpose: "Midtown hot meal senior deliveries", amount: 30000, agency: "DFTA / Aging", status: "Active (Approved)" }
+    "Restler": [
+      { organization: "Association of Community Employment Programs for the Homeless, Inc.", ein: "13-3846431", purpose: "Sanitation Cleanup - Council District 33", amount: 160000, agency: "DYCD" },
+      { organization: "Southside United Housing Development Fund Corporation", ein: "23-7439716", purpose: "Council District 33", amount: 150000, agency: "HPD" }
     ],
-    "Tiffany Cabán": [
-      { organization: "Astoria Community Arts Collective", ein: "44-3322115", purpose: "Local ceramics and crafts workshops", amount: 20000, agency: "DCLA", status: "Active (Approved)" },
-      { organization: "Queens Public Library (Astoria)", ein: "55-2233441", purpose: "Free digital tech tutoring for immigrants", amount: 35000, agency: "DYCD", status: "Active (Approved)" }
+    "Brooks-Powers": [
+      { organization: "City University of New York", ein: "13-3893536", purpose: "CUNY School of Urban and Labor Studies", amount: 177000, agency: "CUNY" }
     ]
-  } as Record<string, Array<{ organization: string; ein: string; purpose: string; amount: number; agency: string; status: string }>>,
+  } as Record<string, Array<{ organization: string; ein: string; purpose: string; amount: number; agency: string }>>,
 
-  // 2. CM Discretionary awards historical trend (FY2020 - FY2024)
+  // 2. Real per-member sponsored awards across FY2024-FY2027 (top 2 by dollar amount per year).
   cmExpenseHistory: {
-    "Chi Ossé": [
-      { fy: "FY2022", organization: "Brooklyn Youth Code Guild", purpose: "Introductory Web Coding Workshops", amount: 25000, agency: "DYCD", resolution: "Res 1104-2022" },
-      { fy: "FY2023", organization: "Brooklyn Youth Code Guild", purpose: "Flatbush STEM & Code Bootcamps", amount: 30000, agency: "DYCD", resolution: "Res 0824-2023" },
-      { fy: "FY2023", organization: "El Puente de Williamsburg", purpose: "Mural Preservation Campaign", amount: 15000, agency: "DCLA", resolution: "Res 0824-2023" },
-      { fy: "FY2024", organization: "Brooklyn Youth Code Guild", purpose: "Flatbush Girls Who Code Club", amount: 32000, agency: "DYCD", resolution: "Res 1450-2024" },
-      { fy: "FY2024", organization: "El Puente de Williamsburg", purpose: "Bed-Stuy Youth Community Theater", amount: 18000, agency: "DCLA", resolution: "Res 1450-2024" }
+    "Osse": [
+      { fy: "FY2024", organization: "Department of Sanitation", purpose: "Cleanup Services - Council District 36", amount: 128750, agency: "DSNY" },
+      { fy: "FY2024", organization: "Bridge Street Development Corporation", purpose: "Council District 36", amount: 92500, agency: "DFTA" },
+      { fy: "FY2025", organization: "Department of Sanitation", purpose: "Supplemental Sanitation Services - Council District 36", amount: 128750, agency: "DSNY" },
+      { fy: "FY2026", organization: "BRIC Arts Media Brooklyn, Inc.", purpose: "Council District 36", amount: 200000, agency: "DCLA" },
+      { fy: "FY2027", organization: "Association of Community Employment Programs for the Homeless, Inc.", purpose: "Council District 36", amount: 110000, agency: "DYCD" }
     ],
-    "Gale Brewer": [
-      { fy: "FY2020", organization: "West Side Senior Services", purpose: "Senior Recreation & Food Deliveries", amount: 20000, agency: "DFTA / Aging", resolution: "Res 0912-2020" },
-      { fy: "FY2021", organization: "Lincoln Center for the Performing Arts", purpose: "Community Concert Series", amount: 60000, agency: "DCLA", resolution: "Res 0244-2021" },
-      { fy: "FY2022", organization: "West Side Senior Services", purpose: "NORC Case Management System", amount: 22000, agency: "DFTA / Aging", resolution: "Res 1104-2022" },
-      { fy: "FY2023", organization: "New York Botanical Garden", purpose: "Community Botanical Education", amount: 45000, agency: "DCLA", resolution: "Res 0824-2023" },
-      { fy: "FY2024", organization: "Lincoln Center for the Performing Arts", purpose: "Summer Out of Doors Concerts", amount: 70000, agency: "DCLA", resolution: "Res 1450-2024" }
+    "Caban": [
+      { fy: "FY2024", organization: "Association of Community Employment Programs for the Homeless, Inc.", purpose: "Sanitation Services - Council District 22", amount: 260000, agency: "DYCD" },
+      { fy: "FY2025", organization: "Queensboro Council for Social Welfare, Inc.", purpose: "Domestic Violence Education Program", amount: 60000, agency: "DSS/HRA" },
+      { fy: "FY2026", organization: "Association of Community Employment Programs for the Homeless, Inc.", purpose: "Sanitation Services - Council District 22", amount: 260000, agency: "DYCD" },
+      { fy: "FY2027", organization: "Association of Community Employment Programs for the Homeless, Inc.", purpose: "Sanitation Services - Council District 22", amount: 260000, agency: "DYCD" }
     ],
-    "Justin Brannan": [
-      { fy: "FY2020", organization: "Bay Ridge Community Council", purpose: "Community Forum Support", amount: 20000, agency: "DYCD", resolution: "Res 0912-2020" },
-      { fy: "FY2021", organization: "Guild for Exceptional Children", purpose: "Disability Daycare Operations", amount: 35000, agency: "DOHMH", resolution: "Res 0244-2021" },
-      { fy: "FY2022", organization: "South Brooklyn Health Network", purpose: "Local Vaccine Advocacy Program", amount: 40000, agency: "DOHMH", resolution: "Res 1104-2022" },
-      { fy: "FY2023", organization: "Bay Ridge Community Council", purpose: "Bay Ridge Youth Leadership Forum", amount: 22000, agency: "DYCD", resolution: "Res 0824-2023" },
-      { fy: "FY2024", organization: "Guild for Exceptional Children", purpose: "Youth Special Education Tutorials", amount: 42000, agency: "DOHMH", resolution: "Res 1450-2024" }
+    "Brewer": [
+      { fy: "FY2024", organization: "Goddard Riverside Community Center", purpose: "Green Keepers/TOP Opportunities", amount: 200000, agency: "DYCD" },
+      { fy: "FY2025", organization: "Goddard Riverside Community Center", purpose: "Green Keepers/TOP Opportunities - Council District 6", amount: 200000, agency: "DYCD" },
+      { fy: "FY2026", organization: "Goddard Riverside Community Center", purpose: "Green Keepers/TOP Opportunities - Council District 6", amount: 200000, agency: "DYCD" },
+      { fy: "FY2027", organization: "Goddard Riverside Community Center", purpose: "Greenkeepers & TOP Opportunities - Council District 6", amount: 250000, agency: "DYCD" }
     ],
-    "Keith Powers": [
-      { fy: "FY2022", organization: "Lincoln Center for the Performing Arts", purpose: "Midtown Music Labs", amount: 35000, agency: "DCLA", resolution: "Res 1104-2022" },
-      { fy: "FY2023", organization: "West Side Senior Services", purpose: "Midtown Senior Outreach", amount: 28000, agency: "DFTA / Aging", resolution: "Res 0824-2023" }
+    "Restler": [
+      { fy: "FY2024", organization: "Association of Community Employment Programs for the Homeless, Inc.", purpose: "Council District 33", amount: 135000, agency: "DYCD" },
+      { fy: "FY2025", organization: "Southside United Housing Development Fund Corporation", purpose: "Council District 33", amount: 150000, agency: "HPD" },
+      { fy: "FY2026", organization: "ExpandED Schools, Inc.", purpose: "High-Impact Tutoring", amount: 300000, agency: "DYCD" },
+      { fy: "FY2027", organization: "Association of Community Employment Programs for the Homeless, Inc.", purpose: "Sanitation Cleanup - Council District 33", amount: 160000, agency: "DYCD" }
     ],
-    "Tiffany Cabán": [
-      { fy: "FY2023", organization: "Astoria Community Arts Collective", purpose: "Local Arts & Ceramics", amount: 15000, agency: "DCLA", resolution: "Res 0824-2023" },
-      { fy: "FY2024", organization: "Queens Public Library (Astoria)", purpose: "Immigrant Literacy & Language Help", amount: 30000, agency: "DYCD", resolution: "Res 1450-2024" }
+    "Brooks-Powers": [
+      { fy: "FY2024", organization: "Association of Community Employment Programs for the Homeless, Inc.", purpose: "Council District 31", amount: 85000, agency: "DYCD" },
+      { fy: "FY2025", organization: "City University of New York", purpose: "CUNY School of Urban and Labor Studies", amount: 177000, agency: "CUNY" },
+      { fy: "FY2026", organization: "City University of New York", purpose: "CUNY School of Urban and Labor Studies", amount: 177000, agency: "CUNY" },
+      { fy: "FY2027", organization: "City University of New York", purpose: "CUNY School of Urban and Labor Studies", amount: 177000, agency: "CUNY" }
     ]
-  } as Record<string, Array<{ fy: string; organization: string; purpose: string; amount: number; agency: string; resolution: string }>>,
+  } as Record<string, Array<{ fy: string; organization: string; purpose: string; amount: number; agency: string }>>,
 
-  // 3. Transparency Resolutions - rescinded or moved funds (FY2026)
-  transparencyRes: {
-    "Brooklyn Youth Code Guild": {
-      original: 35000,
-      sponsor: "Chi Ossé (District 36)",
-      agency: "DYCD",
-      status: "Increased by Transparency Resolution",
-      resolution: "Res. 1042-A (Adopted March 18, 2026)",
-      trail: "Originally allocated $35,000. Under Res 1042-A, received an additional $10,000 (rescinded from Flatbush YMCA underspending) to double capacity for the Spring Flatbush STEM program. Total adjusted award: $45,000."
-    },
-    "Flatbush YMCA": {
-      original: 25000,
-      sponsor: "Rita Joseph (District 40)",
-      agency: "DYCD",
-      status: "Rescinded (Partially) by Transparency Resolution",
-      resolution: "Res. 1042-A (Adopted March 18, 2026)",
-      trail: "Originally allocated $25,000. Due to administrative contracting delays, $10,000 was rescinded by request of the sponsor and transferred to Brooklyn Youth Code Guild. Remaining $15,000 remained active."
-    },
-    "Bronx Arts Ensemble": {
-      original: 30000,
-      sponsor: "Oswald Feliz (District 15)",
-      agency: "DCLA",
-      status: "Unchanged / Active",
-      resolution: "N/A (No modifications in FY2026)",
-      trail: "The original $30,000 allocation was approved during the June budget adoption and has not been altered by any mid-year Transparency Resolutions. Fully executed."
-    },
-    "New York Botanical Garden": {
-      original: 50000,
-      sponsor: "Gale Brewer (District 6)",
-      agency: "DCLA",
-      status: "Unchanged / Active",
-      resolution: "N/A (No modifications in FY2026)",
-      trail: "Budget line remains fully active as of the latest consolidated register. No rescissions or transfers recorded."
-    },
-    "El Puente de Williamsburg": {
-      original: 20000,
-      sponsor: "Chi Ossé (District 36)",
-      agency: "DCLA",
-      status: "Temporarily Pended Under Review",
-      resolution: "Res. 0914-B (Reviewed May 12, 2026)",
-      trail: "Held temporarily for board conflict certification. Successfully cleared and approved for full $20,000 execution following review in late May."
-    }
-  } as Record<string, { original: number; sponsor: string; agency: string; status: string; resolution: string; trail: string }>,
+  // 3. Real reconciliation variances: every year where BetaNYC's own reconciliation flagged a
+  // difference between a category's "initiatives" worksheet total and its "printed" adopted total
+  // (data/fy{NN}/schedule_c/fy{NN}_schedule_c_reconciliation.txt, "DIFF" rows). This replaces a
+  // fabricated per-organization "Transparency Resolution" narrative with the real, dated variance
+  // ledger BetaNYC's parser actually produces.
+  reconciliationVariances: [
+    { fy: "FY2009", category: "Health Services and Prevention", initiatives: 25531000, printed: 26031000, diff: -500000 },
+    { fy: "FY2011", category: "Education", initiatives: 21205000, printed: 20955000, diff: 250000 },
+    { fy: "FY2016", category: "Criminal Justice Services", initiatives: 14957500, printed: 15657500, diff: -700000 },
+    { fy: "FY2017", category: "Mental Health Services", initiatives: 11895534, printed: 11895334, diff: 200 },
+    { fy: "FY2018", category: "Children's Services", initiatives: 14360000, printed: 14460000, diff: -100000 },
+    { fy: "FY2022", category: "Veterans Services", initiatives: 5120500, printed: 5835000, diff: -714500 },
+    { fy: "FY2024", category: "Criminal Justice Services", initiatives: 28711645, printed: 28658710, diff: 52935 },
+    { fy: "FY2025", category: "Education", initiatives: 39974300, printed: 39924300, diff: 50000 },
+    { fy: "FY2026", category: "Immigrant Services", initiatives: 86092141, printed: 86091341, diff: 800 }
+  ] as Array<{ fy: string; category: string; initiatives: number; printed: number; diff: number }>,
 
-  // 4. Capital projects sponsored since FY2020
+  // 4. Real FY27 capital projects by sponsor (data/fy27/capital/fy27_capital_projects.csv).
+  // Osse and Caban have no recorded capital projects in the FY27 file — shown as a real, empty result
+  // rather than substituted with placeholder projects.
   capitalProjects: {
-    "Gale Brewer": [
-      { fy: "FY2020", project: "Central Park Ramble Pedestrian Bridge Renovation", amount: 250000, agency: "Parks Dept", status: "Completed" },
-      { fy: "FY2022", project: "West Side Senior Center Roof & HVAC Repair", amount: 180000, agency: "Dept of Aging / DDC", status: "In Progress" },
-      { fy: "FY2024", project: "St. Agnes Library Branch Technology Hub & AC Repairs", amount: 400000, agency: "NYPL / DDC", status: "Design Phase" },
-      { fy: "FY2025", project: "Riverside Park Inclusive Playground Upgrades", amount: 350000, agency: "Parks Dept", status: "Approved" }
+    "Brewer": [
+      { project: "AMNH Roof Replacement", amount: 4000000, agency: "Cultural Institutions", boro: "Manhattan" },
+      { project: "The Met Improved Accessibility and Mobility", amount: 3000000, agency: "Cultural Institutions", boro: "Manhattan" },
+      { project: "Metropolitan Opera Fly System Pipes", amount: 2350000, agency: "Cultural Institutions", boro: "Manhattan" }
     ],
-    "Chi Ossé": [
-      { fy: "FY2022", project: "Bed-Stuy Community Garden Solar Lighting Infrastructure", amount: 95000, agency: "Parks Dept", status: "Completed" },
-      { fy: "FY2023", project: "Brooklyn Public Library (Macon Branch) Community Tech Lab", amount: 150000, agency: "BPL / DDC", status: "Completed" },
-      { fy: "FY2025", project: "Restoration Plaza Youth Theater AV Systems Retrofit", amount: 220000, agency: "DCLA / DDC", status: "Construction Phase" }
+    "Restler": [
+      { project: "Goodwill NY/NJ Brooklyn HQ/Service Center Purchase", amount: 2500000, agency: "Human Resources", boro: "Brooklyn" },
+      { project: "I.S. 318 Supplemental Cooling", amount: 800000, agency: "Education", boro: "Brooklyn" },
+      { project: "The Noel Pointer Foundation", amount: 642000, agency: "Cultural Institutions", boro: "Brooklyn" }
     ],
-    "Justin Brannan": [
-      { fy: "FY2021", project: "Shore Road Park Seawall Railing Structural Repairs", amount: 300000, agency: "Parks Dept", status: "Completed" },
-      { fy: "FY2023", project: "Bay Ridge Library Entrance ADA Ramp Upgrade", amount: 275000, agency: "BPL / DDC", status: "In Progress" },
-      { fy: "FY2025", project: "Fort Hamilton High School Multi-Sport Turf Field", amount: 500000, agency: "School Construction Authority", status: "Approved" }
+    "Brooks-Powers": [
+      { project: "Brookville Park Recreation Center", amount: 5000000, agency: "Parks", boro: "Queens" },
+      { project: "Queens United Middle School Gym Supplemental Cooling", amount: 1000000, agency: "Education", boro: "Queens" },
+      { project: "Springfield Gardens Phase 5", amount: 500000, agency: "Highways", boro: "Queens" }
     ],
-    "Keith Powers": [
-      { fy: "FY2021", project: "East River Esplanade Bench & Railing Restoration", amount: 200000, agency: "Parks Dept", status: "Completed" },
-      { fy: "FY2023", project: "Midtown Senior Outreach Van Acquisition", amount: 85000, agency: "Dept of Aging", status: "Completed" }
-    ],
-    "Tiffany Cabán": [
-      { fy: "FY2022", project: "Astoria Park Fitness Equipment Installation", amount: 120000, agency: "Parks Dept", status: "Completed" },
-      { fy: "FY2024", project: "Astoria Library Branch Accessibility Improvements", amount: 250000, agency: "Queens Public Library", status: "Design Phase" }
-    ]
-  } as Record<string, Array<{ fy: string; project: string; amount: number; agency: string; status: string }>>,
+    "Osse": [],
+    "Caban": []
+  } as Record<string, Array<{ project: string; amount: number; agency: string; boro: string }>>,
 
-  // 6. Aggregate historical funding FY2015 forward
+  // 6. Real lifetime EIN-level funding, FY2015-FY2027 — every year and dollar figure below comes from
+  // matching each organization's real EIN across 13 years of fy{NN}_schedule_c_awards.csv. Years with
+  // no matching award are real absences (not gaps in tracking), shown as $0.
   lifetimeFunding: {
-    "Brooklyn Youth Code Guild": {
-      ein: "11-2233445",
-      total: 215000,
+    "Girls Who Code, Inc.": {
+      ein: "30-0728021",
+      total: 624356,
       years: [
-        { fy: "FY2015", amount: 0, note: "Not yet incorporated" },
-        { fy: "FY2016", amount: 0, note: "Not yet incorporated" },
-        { fy: "FY2017", amount: 0, note: "Not yet incorporated" },
-        { fy: "FY2018", amount: 0, note: "Incorporated" },
-        { fy: "FY2019", amount: 15000, note: "1 award (Sponsor: Robert Cornegy)" },
-        { fy: "FY2020", amount: 18000, note: "1 award (Sponsor: Robert Cornegy)" },
-        { fy: "FY2021", amount: 20000, note: "1 award (Sponsor: Robert Cornegy)" },
-        { fy: "FY2022", amount: 25000, note: "1 award (Sponsor: Chi Ossé)" },
-        { fy: "FY2023", amount: 30000, note: "2 awards (Sponsors: Chi Ossé, Rita Joseph)" },
-        { fy: "FY2024", amount: 32000, note: "2 awards (Sponsors: Chi Ossé, Rita Joseph)" },
-        { fy: "FY2025", amount: 35000, note: "2 awards (Sponsors: Chi Ossé, Rita Joseph)" },
-        { fy: "FY2026", amount: 45000, note: "3 awards (Including Res 1042-A supplementary $10k)" }
+        { fy: "FY2015", amount: 0, note: "No award on record" },
+        { fy: "FY2016", amount: 0, note: "No award on record" },
+        { fy: "FY2017", amount: 0, note: "No award on record" },
+        { fy: "FY2018", amount: 0, note: "No award on record" },
+        { fy: "FY2019", amount: 50000, note: "1 award" },
+        { fy: "FY2020", amount: 70000, note: "1 award" },
+        { fy: "FY2021", amount: 63000, note: "1 award" },
+        { fy: "FY2022", amount: 70000, note: "1 award" },
+        { fy: "FY2023", amount: 70000, note: "1 award" },
+        { fy: "FY2024", amount: 75339, note: "1 award" },
+        { fy: "FY2025", amount: 75339, note: "1 award" },
+        { fy: "FY2026", amount: 75339, note: "1 award" },
+        { fy: "FY2027", amount: 75339, note: "1 award" }
       ]
     },
-    "Flatbush YMCA": {
-      ein: "22-3344556",
-      total: 1340000,
+    "Bronx River Art Center, Inc.": {
+      ein: "13-3261148",
+      total: 460000,
       years: [
-        { fy: "FY2015", amount: 85000, note: "2 awards (Sponsors: Jumaane Williams, Mathieu Eugene)" },
-        { fy: "FY2016", amount: 90000, note: "2 awards (Sponsors: Jumaane Williams, Mathieu Eugene)" },
-        { fy: "FY2017", amount: 95000, note: "2 awards (Sponsors: Jumaane Williams, Mathieu Eugene)" },
-        { fy: "FY2018", amount: 110000, note: "3 awards (Sponsors: Williams, Eugene, Council Speaker)" },
-        { fy: "FY2019", amount: 105000, note: "2 awards (Sponsors: Williams, Eugene)" },
-        { fy: "FY2020", amount: 120000, note: "3 awards (Sponsors: Eugene, Speaker, Finance)" },
-        { fy: "FY2021", amount: 95000, note: "2 awards (Pandemic adjustments)" },
-        { fy: "FY2022", amount: 115000, note: "3 awards (Sponsor: Rita Joseph)" },
-        { fy: "FY2023", amount: 130000, note: "4 awards (Sponsors: Joseph, Williams, Speaker)" },
-        { fy: "FY2024", amount: 125000, note: "3 awards (Sponsor: Rita Joseph)" },
-        { fy: "FY2025", amount: 140000, note: "4 awards (Sponsors: Joseph, Speaker, Williams)" },
-        { fy: "FY2026", amount: 130000, note: "3 awards (Original $140k reduced by $10k mid-year)" }
+        { fy: "FY2015", amount: 0, note: "No award on record" },
+        { fy: "FY2016", amount: 0, note: "No award on record" },
+        { fy: "FY2017", amount: 0, note: "No award on record" },
+        { fy: "FY2018", amount: 0, note: "No award on record" },
+        { fy: "FY2019", amount: 0, note: "No award on record" },
+        { fy: "FY2020", amount: 10000, note: "1 award (sponsor: Diaz)" },
+        { fy: "FY2021", amount: 50000, note: "1 award" },
+        { fy: "FY2022", amount: 0, note: "No award on record" },
+        { fy: "FY2023", amount: 60000, note: "1 award" },
+        { fy: "FY2024", amount: 95000, note: "3 awards (sponsors: Stevens, Velazquez)" },
+        { fy: "FY2025", amount: 85000, note: "3 awards (sponsors: Dinowitz, Feliz)" },
+        { fy: "FY2026", amount: 85000, note: "3 awards (sponsors: Dinowitz, Feliz)" },
+        { fy: "FY2027", amount: 75000, note: "2 awards (sponsor: Feliz)" }
       ]
     },
-    "Bronx Arts Ensemble": {
-      ein: "33-4455667",
-      total: 698000,
+    "SCAN-Harbor, Inc.": {
+      ein: "13-2912963",
+      total: 1460203,
       years: [
-        { fy: "FY2015", amount: 45000, note: "3 awards (Bronx Delegation)" },
-        { fy: "FY2016", amount: 48000, note: "3 awards (Sponsors: Torres, Cabrera)" },
-        { fy: "FY2017", amount: 52000, note: "4 awards (Bronx Delegation)" },
-        { fy: "FY2018", amount: 50000, note: "3 awards (Torres, Cabrera)" },
-        { fy: "FY2019", amount: 55000, note: "3 awards (Sponsors: Ritchie Torres, Cabrera)" },
-        { fy: "FY2020", amount: 60000, note: "4 awards (Sponsors: Torres, Cabrera, Speaker)" },
-        { fy: "FY2021", amount: 45000, note: "2 awards (COVID-era reductions)" },
-        { fy: "FY2022", amount: 58000, note: "3 awards (Sponsor: Oswald Feliz)" },
-        { fy: "FY2023", amount: 65000, note: "4 awards (Sponsors: Feliz, Sanchez, Speaker)" },
-        { fy: "FY2024", amount: 68000, note: "3 awards (Sponsor: Oswald Feliz)" },
-        { fy: "FY2025", amount: 72000, note: "4 awards (Sponsors: Feliz, Sanchez, Speaker)" },
-        { fy: "FY2026", amount: 80000, note: "4 awards (Sponsor: Oswald Feliz)" }
+        { fy: "FY2015", amount: 20000, note: "1 award" },
+        { fy: "FY2016", amount: 721200, note: "2 awards" },
+        { fy: "FY2017", amount: 0, note: "No award on record" },
+        { fy: "FY2018", amount: 80000, note: "1 award" },
+        { fy: "FY2019", amount: 0, note: "No award on record" },
+        { fy: "FY2020", amount: 80000, note: "1 award" },
+        { fy: "FY2021", amount: 102000, note: "2 awards (sponsor: Gibson)" },
+        { fy: "FY2022", amount: 102000, note: "2 awards (sponsor: Gibson)" },
+        { fy: "FY2023", amount: 20000, note: "1 award (sponsor: Stevens)" },
+        { fy: "FY2024", amount: 110000, note: "3 awards" },
+        { fy: "FY2025", amount: 145003, note: "5 awards (sponsors: Ayala, Bronx Delegation)" },
+        { fy: "FY2026", amount: 0, note: "No award on record" },
+        { fy: "FY2027", amount: 80000, note: "2 awards" }
       ]
     },
-    "New York Botanical Garden": {
-      ein: "44-5566778",
-      total: 1060000,
+    "Doe Fund, Inc., The": {
+      ein: "13-3412540",
+      total: 768250,
       years: [
-        { fy: "FY2015", amount: 75000, note: "Bronx Delegation awards" },
-        { fy: "FY2016", amount: 80000, note: "Bronx Delegation awards" },
-        { fy: "FY2017", amount: 85000, note: "Bronx Delegation awards" },
-        { fy: "FY2018", amount: 90000, note: "Bronx Delegation awards" },
-        { fy: "FY2019", amount: 85000, note: "Bronx Delegation awards" },
-        { fy: "FY2020", amount: 95000, note: "Bronx Delegation + Speaker" },
-        { fy: "FY2021", amount: 70000, note: "Pandemic adjusted funding" },
-        { fy: "FY2022", amount: 90000, note: "Bronx Delegation + Gale Brewer" },
-        { fy: "FY2023", amount: 105000, note: "Sponsors: Gale Brewer, Oswald Feliz" },
-        { fy: "FY2024", amount: 110000, note: "Sponsors: Gale Brewer, Oswald Feliz" },
-        { fy: "FY2025", amount: 125000, note: "Sponsors: Gale Brewer, Oswald Feliz" },
-        { fy: "FY2026", amount: 150000, note: "Sponsors: Gale Brewer, Oswald Feliz, Speaker" }
+        { fy: "FY2015", amount: 43750, note: "2 awards (sponsor: Rosenthal)" },
+        { fy: "FY2016", amount: 0, note: "No award on record" },
+        { fy: "FY2017", amount: 0, note: "No award on record" },
+        { fy: "FY2018", amount: 0, note: "No award on record" },
+        { fy: "FY2019", amount: 0, note: "No award on record" },
+        { fy: "FY2020", amount: 20000, note: "1 award (sponsor: Eugene)" },
+        { fy: "FY2021", amount: 0, note: "No award on record" },
+        { fy: "FY2022", amount: 150000, note: "1 award (sponsor: Gennaro)" },
+        { fy: "FY2023", amount: 250000, note: "1 award" },
+        { fy: "FY2024", amount: 140000, note: "2 awards (sponsors: Mealy, Stevens)" },
+        { fy: "FY2025", amount: 20000, note: "1 award (sponsor: Bottcher)" },
+        { fy: "FY2026", amount: 64500, note: "3 awards (sponsors: Bottcher, Salaam)" },
+        { fy: "FY2027", amount: 80000, note: "3 awards (sponsors: Mealy, Salaam, Wilson)" }
       ]
     },
-    "El Puente de Williamsburg": {
-      ein: "55-6677889",
-      total: 443000,
+    "Open Space Alliance for North Brooklyn, Inc.": {
+      ein: "01-0849087",
+      total: 328000,
       years: [
-        { fy: "FY2015", amount: 25000, note: "1 award (Sponsor: Antonio Reynoso)" },
-        { fy: "FY2016", amount: 28000, note: "1 award (Sponsor: Antonio Reynoso)" },
-        { fy: "FY2017", amount: 32000, note: "2 awards (Sponsors: Reynoso, Speaker)" },
-        { fy: "FY2018", amount: 35000, note: "1 award (Sponsor: Antonio Reynoso)" },
-        { fy: "FY2019", amount: 35000, note: "2 awards (Sponsors: Reynoso, Levin)" },
-        { fy: "FY2020", amount: 40000, note: "2 awards (Sponsors: Reynoso, Levin)" },
-        { fy: "FY2021", amount: 30000, note: "1 award (Pandemic reductions)" },
-        { fy: "FY2022", amount: 43000, note: "2 awards (Sponsor: Chi Ossé)" },
-        { fy: "FY2023", amount: 55000, note: "3 awards (Sponsors: Chi Ossé, Lincoln Restler)" },
-        { fy: "FY2024", amount: 58000, note: "2 awards (Sponsors: Chi Ossé, Lincoln Restler)" },
-        { fy: "FY2025", amount: 57000, note: "2 awards (Sponsors: Chi Ossé, Lincoln Restler)" },
-        { fy: "FY2026", amount: 60000, note: "3 awards (Including Chi Ossé, Lincoln Restler)" }
+        { fy: "FY2015", amount: 0, note: "No award on record" },
+        { fy: "FY2016", amount: 0, note: "No award on record" },
+        { fy: "FY2017", amount: 0, note: "No award on record" },
+        { fy: "FY2018", amount: 0, note: "No award on record" },
+        { fy: "FY2019", amount: 0, note: "No award on record" },
+        { fy: "FY2020", amount: 28000, note: "2 awards (sponsor: Levin)" },
+        { fy: "FY2021", amount: 0, note: "No award on record" },
+        { fy: "FY2022", amount: 0, note: "No award on record" },
+        { fy: "FY2023", amount: 0, note: "No award on record" },
+        { fy: "FY2024", amount: 75000, note: "4 awards (sponsors: Brooklyn Delegation, Restler)" },
+        { fy: "FY2025", amount: 80000, note: "4 awards (sponsor: Restler)" },
+        { fy: "FY2026", amount: 65000, note: "3 awards (sponsors: Gutierrez, Restler)" },
+        { fy: "FY2027", amount: 80000, note: "3 awards (sponsors: Gutierrez, Restler)" }
       ]
     }
   } as Record<string, { ein: string; total: number; years: Array<{ fy: string; amount: number; note: string }> }>
