@@ -1,0 +1,117 @@
+{
+  "fiscalYear": "FY2014",
+  "sourceFile": "fy2014-skedc.pdf",
+  "sourcePages": 439,
+  "parserEra": "early-era",
+  "categories": [
+    {
+      "category": "ANTI-GUN VIOLENCE INITIATIVE",
+      "initiatives": 4807000,
+      "printed": 4807000,
+      "status": "OK"
+    },
+    {
+      "category": "CUNY",
+      "initiatives": 63700000,
+      "printed": 63700000,
+      "status": "OK"
+    },
+    {
+      "category": "CIVIL LEGAL SERVICES",
+      "initiatives": 4035000,
+      "printed": 4035000,
+      "status": "OK"
+    },
+    {
+      "category": "CRIMINAL JUSTICE SERVICES",
+      "initiatives": 4950000,
+      "printed": 4950000,
+      "status": "OK"
+    },
+    {
+      "category": "CULTURAL ORGANIZATIONS",
+      "initiatives": 15900000,
+      "printed": 15900000,
+      "status": "OK"
+    },
+    {
+      "category": "DOMESTIC VIOLENCE",
+      "initiatives": 4250000,
+      "printed": 4250000,
+      "status": "OK"
+    },
+    {
+      "category": "EDUCATION",
+      "initiatives": 17635000,
+      "printed": 17635000,
+      "status": "OK"
+    },
+    {
+      "category": "FIRE SERVICES",
+      "initiatives": 43682294,
+      "printed": 43682294,
+      "status": "OK"
+    },
+    {
+      "category": "GOVERNMENT OFFICIALS",
+      "initiatives": 533606,
+      "printed": 533606,
+      "status": "OK"
+    },
+    {
+      "category": "HIGHER EDUCATION",
+      "initiatives": 3990000,
+      "printed": 3990000,
+      "status": "OK"
+    },
+    {
+      "category": "HOMELESS SERVICES",
+      "initiatives": 1450000,
+      "printed": 1450000,
+      "status": "OK"
+    },
+    {
+      "category": "HOUSING",
+      "initiatives": 5060000,
+      "printed": 5060000,
+      "status": "OK"
+    },
+    {
+      "category": "IMMIGRANT SERVICES",
+      "initiatives": 5100000,
+      "printed": 5100000,
+      "status": "OK"
+    },
+    {
+      "category": "LIBRARIES",
+      "initiatives": 12849000,
+      "printed": 12849000,
+      "status": "OK"
+    },
+    {
+      "category": "PARKS AND RECREATION",
+      "initiatives": 4437000,
+      "printed": 4437000,
+      "status": "OK"
+    },
+    {
+      "category": "SENIOR SERVICES",
+      "initiatives": 30135601,
+      "printed": 30135601,
+      "status": "OK"
+    },
+    {
+      "category": "SOCIAL SERVICES",
+      "initiatives": 82279104,
+      "printed": 82279104,
+      "status": "OK"
+    }
+  ],
+  "grandTotal": {
+    "initiatives": 304793605,
+    "printed": 304793605
+  },
+  "reconciliationStatus": "17/17 categories exact",
+  "awardLevel": null,
+  "initiativesRowCount": 123
+}

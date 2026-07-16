@@ -81,12 +81,18 @@ export default function App() {
         {/* Right Side: Logo at the top-right, budget stats and link below it */}
         <div className="flex flex-col items-start md:items-end gap-4 self-stretch md:self-auto md:text-right">
           {/* Custom brand identity box at the top right, 25% smaller, minimized whitespace */}
-          <div className="bg-white px-6 py-4 border-4 border-[#1A1A1A] shadow-[4px_4px_0px_0px_#1A1A1A] shrink-0 w-60 sm:w-72 flex flex-col justify-center items-start leading-none select-none self-start md:self-end" id="brand-logo-container">
+          <a
+            href="https://www.nyc-dssg.org"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-white px-6 py-4 border-4 border-[#1A1A1A] shadow-[4px_4px_0px_0px_#1A1A1A] shrink-0 w-60 sm:w-72 flex flex-col justify-center items-start leading-none select-none self-start md:self-end hover:shadow-[2px_2px_0px_0px_#1A1A1A] hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer"
+            id="brand-logo-container"
+          >
             <span className="font-serif font-black tracking-tighter text-[#003B71] text-[34px] sm:text-[40px] leading-none">DSSG-NYC</span>
             <span className="text-[#F27D26] font-mono font-bold text-[11px] sm:text-[13px] uppercase tracking-tight mt-2 leading-tight">
               organized by Data Diplomats
             </span>
-          </div>
+          </a>
           
           {/* Budget stats and source code button */}
           <div className="flex flex-col sm:flex-row items-start sm:items-end gap-6 w-full md:w-auto md:text-right mt-1">

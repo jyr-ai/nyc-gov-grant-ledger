@@ -1,0 +1,154 @@
+[
+  {
+    "fiscalYear": "FY2009",
+    "file": "fy09.json",
+    "grandTotalPrinted": 363383804,
+    "awardRows": null,
+    "awardDollarTotal": null,
+    "initiativesRowCount": 123
+  },
+  {
+    "fiscalYear": "FY2010",
+    "file": "fy10.json",
+    "grandTotalPrinted": 313771129,
+    "awardRows": null,
+    "awardDollarTotal": null,
+    "initiativesRowCount": 124
+  },
+  {
+    "fiscalYear": "FY2011",
+    "file": "fy11.json",
+    "grandTotalPrinted": 317676672,
+    "awardRows": null,
+    "awardDollarTotal": null,
+    "initiativesRowCount": 110
+  },
+  {
+    "fiscalYear": "FY2012",
+    "file": "fy12.json",
+    "grandTotalPrinted": 276092050,
+    "awardRows": null,
+    "awardDollarTotal": null,
+    "initiativesRowCount": 97
+  },
+  {
+    "fiscalYear": "FY2013",
+    "file": "fy13.json",
+    "grandTotalPrinted": 312874891,
+    "awardRows": null,
+    "awardDollarTotal": null,
+    "initiativesRowCount": 121
+  },
+  {
+    "fiscalYear": "FY2014",
+    "file": "fy14.json",
+    "grandTotalPrinted": 304793605,
+    "awardRows": null,
+    "awardDollarTotal": null,
+    "initiativesRowCount": 123
+  },
+  {
+    "fiscalYear": "FY2015",
+    "file": "fy15.json",
+    "grandTotalPrinted": 233438000,
+    "awardRows": 652,
+    "awardDollarTotal": 73199837,
+    "initiativesRowCount": null
+  },
+  {
+    "fiscalYear": "FY2016",
+    "file": "fy16.json",
+    "grandTotalPrinted": 333886574,
+    "awardRows": 335,
+    "awardDollarTotal": 89917012,
+    "initiativesRowCount": null
+  },
+  {
+    "fiscalYear": "FY2017",
+    "file": "fy17.json",
+    "grandTotalPrinted": 279908300,
+    "awardRows": 364,
+    "awardDollarTotal": 89901487,
+    "initiativesRowCount": null
+  },
+  {
+    "fiscalYear": "FY2018",
+    "file": "fy18.json",
+    "grandTotalPrinted": 302086000,
+    "awardRows": 480,
+    "awardDollarTotal": 102716956,
+    "initiativesRowCount": null
+  },
+  {
+    "fiscalYear": "FY2019",
+    "file": "fy19.json",
+    "grandTotalPrinted": 338301000,
+    "awardRows": 846,
+    "awardDollarTotal": 181026931,
+    "initiativesRowCount": null
+  },
+  {
+    "fiscalYear": "FY2020",
+    "file": "fy20.json",
+    "grandTotalPrinted": 404372774,
+    "awardRows": 2841,
+    "awardDollarTotal": 258762385,
+    "initiativesRowCount": null
+  },
+  {
+    "fiscalYear": "FY2021",
+    "file": "fy21.json",
+    "grandTotalPrinted": 304268931,
+    "awardRows": 1810,
+    "awardDollarTotal": 202070188,
+    "initiativesRowCount": null
+  },
+  {
+    "fiscalYear": "FY2022",
+    "file": "fy22.json",
+    "grandTotalPrinted": 465728895,
+    "awardRows": 1492,
+    "awardDollarTotal": 222556943,
+    "initiativesRowCount": null
+  },
+  {
+    "fiscalYear": "FY2023",
+    "file": "fy23.json",
+    "grandTotalPrinted": 486446095,
+    "awardRows": 1848,
+    "awardDollarTotal": 262419214,
+    "initiativesRowCount": null
+  },
+  {
+    "fiscalYear": "FY2024",
+    "file": "fy24.json",
+    "grandTotalPrinted": 471875565,
+    "awardRows": 5368,
+    "awardDollarTotal": 400663574,
+    "initiativesRowCount": null
+  },
+  {
+    "fiscalYear": "FY2025",
+    "file": "fy25.json",
+    "grandTotalPrinted": 534913682,
+    "awardRows": 5646,
+    "awardDollarTotal": 412985110,
+    "initiativesRowCount": null
+  },
+  {
+    "fiscalYear": "FY2026",
+    "file": "fy26.json",
+    "grandTotalPrinted": 665080021,
+    "awardRows": 5838,
+    "awardDollarTotal": 487287245,
+    "initiativesRowCount": null
+  },
+  {
+    "fiscalYear": "FY2027",
+    "file": "fy27.json",
+    "grandTotalPrinted": 655764999,
+    "awardRows": 6118,
+    "awardDollarTotal": 605111412,
+    "initiativesRowCount": null
+  }
+]

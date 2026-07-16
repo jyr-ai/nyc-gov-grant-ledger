@@ -16,8 +16,9 @@
 //   "early-era" filings with category-level totals only — no award count or agency breakdown exists
 //   for those years, so those fields are left undefined rather than estimated.
 // - In every year's awards.csv, a large share of dollars carries no "agency" tag at all (recorded
-//   directly against a category/initiative rather than a specific city agency) — this is preserved
-//   honestly below as an "Unattributed" pool rather than force-assigned to an agency.
+//   directly against a category/initiative rather than a specific city agency). AGENCY_BUDGET_DATA
+//   (the Agency Ledger panel) intentionally excludes this untagged pool rather than showing it as its
+//   own "Unattributed" row — see the comment above that array for the excluded dollar amount.
 // - The Schedule C dataset has no borough field for discretionary awards. The one real per-borough
 //   breakdown available in this repo is the FY27 capital budget file, which is used for the
 //   "Capital Budget by Borough" panel — a different budget instrument than Schedule C, labeled as such.
@@ -63,6 +64,11 @@ export interface HistoricalTrend {
   totalFunds: number;
   grantsCount?: number;
   avgGrant?: number;
+  // Real, sourced ("initiatives rows: N") for FY2009-FY2014 only - counts named initiative/program
+  // line items, NOT individual awards to organizations (those years have no award/EIN-level table at
+  // all - see data/schedule-c-reconciliation/README.md). Deliberately a separate field from
+  // `grantsCount` so the two are never plotted as the same metric.
+  initiativeLineItems?: number;
   socialServices: number;
   youthEducation: number;
   artsCulture: number;
@@ -100,9 +106,11 @@ export const NYC_BUDGET_OVERVIEW = {
 };
 
 // Real FY27 agency breakdown, computed directly from fy27_schedule_c_awards.csv (group by `agency`).
-// "Unattributed" is not a gap in this dataset — it is the largest single slice ($438.2M / 1,744 rows):
-// dollars recorded against a category/initiative in the source CSV with no specific city-agency tag.
-// Shown honestly as its own entry rather than folded into a named agency.
+// By design, this array only includes rows that carry a specific city-agency tag in the source CSV —
+// it deliberately excludes the $438,239,865 / 1,744 rows recorded against a category/initiative with
+// no agency tag at all (this pool included most of the Speaker's Initiative and other multi-agency
+// programs). That means AGENCY_BUDGET_DATA does NOT sum to the FY27 Grand Total or even to the full
+// awards.csv total ($605,111,412) — it only covers the $166,871,547 that is agency-attributable.
 export const AGENCY_BUDGET_DATA: AgencyBudget[] = [
   {
     id: "DYCD",
@@ -202,33 +210,34 @@ export const AGENCY_BUDGET_DATA: AgencyBudget[] = [
     color: "#C84B31",
     description: "Roll-up of every other agency-tagged FY27 award (each individually under $6M), including DCWP, DSNY, DOE, CUNY, HPD-adjacent clerks, DHS, NYPD, FDNY, ACS, NYPL, DOT, QBPL, and borough-president offices.",
     keyInitiatives: ["CUNY Public Service Training Corps", "Community Composting (DSNY)", "Support for Arts Instruction (DOE)"]
-  },
-  {
-    id: "UNATTRIBUTED",
-    name: "Unattributed",
-    fullName: "Citywide Initiative Pool (no agency tag in source data)",
-    totalFunds: 438239865,
-    allocationsCount: 1744,
-    averageAward: Math.round(438239865 / 1744),
-    color: "#546A7B",
-    description: "The largest slice of FY27 Schedule C dollars — recorded against a funding category or named initiative in BetaNYC's award-level data, but without a specific city-agency tag. Includes most of the Speaker's Initiative and many multi-agency programs (e.g. \"A Greener NYC\", \"NYC Cleanup\") that span several agencies at once.",
-    keyInitiatives: ["Speaker's Initiative to Address Citywide Needs", "New York Immigrant Family Unity Project", "Alternatives to Incarceration and Reentry Programs"]
   }
 ];
 
 // Real FY27 category breakdown — every category from the Schedule C reconciliation's 25-row
 // summary table, sourced from fy27_schedule_c_reconciliation.txt (percentage of the real GRAND TOTAL).
+// "Speaker's Initiative to Address Citywide Needs" ($86,522,049) is deliberately folded into "All
+// Other Categories" rather than shown as its own slice here: unlike every other category in this
+// list, it is a content-free catch-all with no real service meaning of its own (see
+// data/schedule-c-reconciliation/speaker-initiative-analysis.json for the agency-based breakdown used
+// elsewhere in the app, e.g. the Historical Timeline's Nonprofit Sectors view). Mixing that synthetic
+// agency-derived split into a chart that otherwise shows literal, real Schedule C category names would
+// blend two different classification systems in one chart, so it stays out of this one.
+// Colors: the 8 named categories use a CVD-validated 8-hue categorical order (validated via the
+// dataviz skill's validate_palette.js against this app's #F9F8F3 chart surface — passes lightness,
+// chroma, CVD-separation, and normal-vision-floor checks; the light-mode contrast WARN on 3 slots is
+// mitigated by the always-visible legend + tooltip, which never rely on color alone). The 9th slot
+// ("All Other Categories") is a deliberate neutral gray outside that 8-hue set, not a 9th generated
+// hue, since it is a rollup rather than a peer identity.
 export const FOCUS_AREA_DATA: FocusAreaBudget[] = [
-  { name: "Speaker's Initiative to Address Citywide Needs", totalFunds: 86522049, percentage: 13.2, color: "#003B71" },
-  { name: "Immigrant Services", totalFunds: 86417141, percentage: 13.2, color: "#F27D26" },
-  { name: "Community Development", totalFunds: 45225000, percentage: 6.9, color: "#8F8D83" },
-  { name: "Education", totalFunds: 43284300, percentage: 6.6, color: "#134074" },
-  { name: "Mental Health Services", totalFunds: 40767110, percentage: 6.2, color: "#D46B13" },
-  { name: "Cultural Organizations", totalFunds: 34350000, percentage: 5.2, color: "#546A7B" },
-  { name: "Criminal Justice Services", totalFunds: 33470153, percentage: 5.1, color: "#B5B3A9" },
-  { name: "Small Business Services and Workforce Development", totalFunds: 33252902, percentage: 5.1, color: "#7B8A7A" },
-  { name: "Older Adult Services", totalFunds: 31990323, percentage: 4.9, color: "#C84B31" },
-  { name: "All Other Categories (16 lines)", totalFunds: 220486021, percentage: 33.6, color: "#D9A406" }
+  { name: "Immigrant Services", totalFunds: 86417141, percentage: 13.2, color: "#2a78d6" },
+  { name: "Community Development", totalFunds: 45225000, percentage: 6.9, color: "#008300" },
+  { name: "Education", totalFunds: 43284300, percentage: 6.6, color: "#e87ba4" },
+  { name: "Mental Health Services", totalFunds: 40767110, percentage: 6.2, color: "#eda100" },
+  { name: "Cultural Organizations", totalFunds: 34350000, percentage: 5.2, color: "#1baf7a" },
+  { name: "Criminal Justice Services", totalFunds: 33470153, percentage: 5.1, color: "#eb6834" },
+  { name: "Small Business Services and Workforce Development", totalFunds: 33252902, percentage: 5.1, color: "#4a3aa7" },
+  { name: "Older Adult Services", totalFunds: 31990323, percentage: 4.9, color: "#e34948" },
+  { name: "All Other Categories (17 lines, incl. Speaker's Initiative)", totalFunds: 307008070, percentage: 46.8, color: "#8F8D83" }
 ];
 
 // Real FY27 capital budget by borough — data/fy27/capital/fy27_capital_projects.csv, grouped by the
@@ -285,36 +294,61 @@ export const BUDGET_INITIATIVES: BudgetInitiative[] = [
 ];
 
 // Real 19-year historical timeline (FY09-FY27), parsed from every year's Schedule C reconciliation
-// file. `totalFunds` is the GRAND TOTAL (printed/adopted column) for every year — 100% real, 100%
-// of the time. `grantsCount`/`avgGrant` are populated only for FY20-FY27, where award-level CSVs
-// exist and their row counts represent a meaningful share of that year's total dollars; FY09-FY19
-// either have no award-level file at all (FY09-14, "early-era" filings) or an award-level file that
-// only captures a small EIN-anchored fraction of that year's total (FY15-19), so a per-grant average
-// computed from it would be misleading and is left undefined rather than estimated.
+// file — organized, sourced copies of which live in this repo under
+// data/schedule-c-reconciliation/ (fyNN.json, parsed from BetaNYC's fyNN_schedule_c_reconciliation.txt,
+// plus raw/fyNN.txt for the original text and index.json for a quick cross-reference).
+// `totalFunds` is the GRAND TOTAL (printed/adopted column) for every year — 100% real, 100% of the time.
+// `grantsCount` is the real, sourced "awards: N rows" count from each year's reconciliation file, and is
+// populated for FY2015-FY2027 (every year that has an award/EIN-level breakdown at all). FY2009-FY2014
+// ("early-era" filings) are left undefined for `grantsCount` specifically: those source PDFs reconcile
+// at the initiative-line level only and never emitted an award/EIN-level table, so there is no real
+// per-organization grant count to report for those six years. What IS real and sourced for those six
+// years is `initiativeLineItems` ("initiatives rows: N" in the source) - the count of named
+// initiative/program lines, a coarser unit than an individual award (see FY2019 for scale: 28
+// *categories* but 846 *awards* - initiatives sit between those two granularities). Plotted as a
+// separate series from `grantsCount` so the two are never implied to be the same metric.
+// `avgGrant` = totalFunds / grantsCount, matching the convention already used for the FY2027 ledger
+// card. Award-level dollar coverage (the sum of individually-attributed awards) is well below 100% of
+// totalFunds in most years — see the README in data/schedule-c-reconciliation/ for the coverage caveat.
 // Sector splits (socialServices/youthEducation/artsCulture/healthWellness/environmentPublicSpace) are
-// a full, 100%-reconciled partition of every year's real category table into 5 buckets — every
-// category name across all 19 years (including legacy names like "Senior Services" or "Youth and
-// Community Development") is mapped to exactly one bucket; see BetaNYC/New-York-City-Budget analysis.
+// NOT a field BetaNYC publishes — the source only reports dollars per named category (e.g. "Criminal
+// Justice Services", "Cultural Organizations"). This 5-bucket grouping is our own editorial
+// classification for charting purposes; the full category->bucket mapping (every category name and
+// naming variant/typo used across all 19 years) is committed and documented at
+// data/schedule-c-reconciliation/sector-category-mapping.json. Every dollar figure that feeds a bucket
+// is real (each category's `printed` value); only the grouping label is ours.
+//
+// SPECIAL CASE — "Speaker's Initiative to Address Citywide Needs": this reconciliation category is a
+// content-free catch-all (its name carries no service meaning), and in FY27 alone it is $86.5M / 13.2%
+// of the entire budget. Rather than dump it all into one bucket, its dollars are split across the 5
+// sectors by each underlying award's *administering agency* (DYCD/DOE/CUNY/ACS->youth, DCLA/libraries->
+// arts, DHMH/DFTA->health, DPR/DSNY/DOT->environment, everything else->social), using the award-level
+// proportions in BetaNYC's combined/all_years_awards.csv applied to the reconciliation Speaker amount.
+// This is done for FY2020-FY2027 (the years with award-level agency data). For FY2016-FY2019 the Speaker
+// category exists but predates award-level tagging, so those dollars stay in socialServices and are NOT
+// deciphered (materially inflating FY17/FY18 social — flagged in the analysis file). Full breakdown and
+// methodology: data/schedule-c-reconciliation/speaker-initiative-analysis.json.
+// Verified: for every year FY2009-FY2027, the 5 bucket sums still add up exactly to the real Grand Total.
 export const HISTORICAL_TREND_DATA: HistoricalTrend[] = [
-  { year: "FY2009", totalFunds: 363383804, socialServices: 66729055, youthEducation: 206270000, artsCulture: 21800000, healthWellness: 67584749, environmentPublicSpace: 1000000 },
-  { year: "FY2010", totalFunds: 313771129, socialServices: 81721129, youthEducation: 91197000, artsCulture: 71898000, healthWellness: 67955000, environmentPublicSpace: 1000000 },
-  { year: "FY2011", totalFunds: 317676672, socialServices: 131759422, youthEducation: 82245000, artsCulture: 66827000, healthWellness: 29024750, environmentPublicSpace: 7820500 },
-  { year: "FY2012", totalFunds: 276092050, socialServices: 118211760, youthEducation: 47520000, artsCulture: 96348790, healthWellness: 6191000, environmentPublicSpace: 7820500 },
-  { year: "FY2013", totalFunds: 312874891, socialServices: 140834154, youthEducation: 94438237, artsCulture: 33800000, healthWellness: 24582500, environmentPublicSpace: 19220000 },
-  { year: "FY2014", totalFunds: 304793605, socialServices: 156147004, youthEducation: 85325000, artsCulture: 28749000, healthWellness: 30135601, environmentPublicSpace: 4437000 },
-  { year: "FY2015", totalFunds: 233438000, socialServices: 87460000, youthEducation: 102683000, artsCulture: 14600000, healthWellness: 13295000, environmentPublicSpace: 15400000 },
-  { year: "FY2016", totalFunds: 333886574, socialServices: 232953919, youthEducation: 17052000, artsCulture: 18821000, healthWellness: 48131855, environmentPublicSpace: 16927800 },
-  { year: "FY2017", totalFunds: 279908300, socialServices: 180699881, youthEducation: 33096000, artsCulture: 27314500, healthWellness: 17107334, environmentPublicSpace: 21690585 },
-  { year: "FY2018", totalFunds: 302086000, socialServices: 191746559, youthEducation: 31266000, artsCulture: 36199500, healthWellness: 20795800, environmentPublicSpace: 22078141 },
-  { year: "FY2019", totalFunds: 338301000, socialServices: 218362097, youthEducation: 32195000, artsCulture: 28422879, healthWellness: 46068024, environmentPublicSpace: 13253000 },
+  { year: "FY2009", totalFunds: 363383804, initiativeLineItems: 123, socialServices: 66729055, youthEducation: 206270000, artsCulture: 21800000, healthWellness: 67584749, environmentPublicSpace: 1000000 },
+  { year: "FY2010", totalFunds: 313771129, initiativeLineItems: 124, socialServices: 81721129, youthEducation: 91197000, artsCulture: 71898000, healthWellness: 67955000, environmentPublicSpace: 1000000 },
+  { year: "FY2011", totalFunds: 317676672, initiativeLineItems: 110, socialServices: 131759422, youthEducation: 82245000, artsCulture: 66827000, healthWellness: 29024750, environmentPublicSpace: 7820500 },
+  { year: "FY2012", totalFunds: 276092050, initiativeLineItems: 97, socialServices: 118211760, youthEducation: 47520000, artsCulture: 96348790, healthWellness: 6191000, environmentPublicSpace: 7820500 },
+  { year: "FY2013", totalFunds: 312874891, initiativeLineItems: 121, socialServices: 140834154, youthEducation: 94438237, artsCulture: 33800000, healthWellness: 24582500, environmentPublicSpace: 19220000 },
+  { year: "FY2014", totalFunds: 304793605, initiativeLineItems: 123, socialServices: 156147004, youthEducation: 85325000, artsCulture: 28749000, healthWellness: 30135601, environmentPublicSpace: 4437000 },
+  { year: "FY2015", totalFunds: 233438000, grantsCount: 652, avgGrant: 358034, socialServices: 87460000, youthEducation: 102683000, artsCulture: 14600000, healthWellness: 13295000, environmentPublicSpace: 15400000 },
+  { year: "FY2016", totalFunds: 333886574, grantsCount: 335, avgGrant: 996676, socialServices: 232953919, youthEducation: 17052000, artsCulture: 18821000, healthWellness: 48131855, environmentPublicSpace: 16927800 },
+  { year: "FY2017", totalFunds: 279908300, grantsCount: 364, avgGrant: 768979, socialServices: 180699881, youthEducation: 33096000, artsCulture: 27314500, healthWellness: 17107334, environmentPublicSpace: 21690585 },
+  { year: "FY2018", totalFunds: 302086000, grantsCount: 480, avgGrant: 629346, socialServices: 191746559, youthEducation: 31266000, artsCulture: 36199500, healthWellness: 20795800, environmentPublicSpace: 22078141 },
+  { year: "FY2019", totalFunds: 338301000, grantsCount: 846, avgGrant: 399883, socialServices: 218362097, youthEducation: 32195000, artsCulture: 28422879, healthWellness: 46068024, environmentPublicSpace: 13253000 },
   { year: "FY2020", totalFunds: 404372774, grantsCount: 2841, avgGrant: 142335, socialServices: 258295521, youthEducation: 50970000, artsCulture: 31582879, healthWellness: 50286024, environmentPublicSpace: 13238350 },
-  { year: "FY2021", totalFunds: 304268931, grantsCount: 1810, avgGrant: 168104, socialServices: 187762635, youthEducation: 20850256, artsCulture: 41997724, healthWellness: 41371716, environmentPublicSpace: 12286600 },
-  { year: "FY2022", totalFunds: 465728895, grantsCount: 1492, avgGrant: 312151, socialServices: 325305234, youthEducation: 21550000, artsCulture: 35797879, healthWellness: 54512432, environmentPublicSpace: 28563350 },
-  { year: "FY2023", totalFunds: 486446095, grantsCount: 1848, avgGrant: 263228, socialServices: 247389337, youthEducation: 83928217, artsCulture: 49595000, healthWellness: 81040041, environmentPublicSpace: 24493500 },
-  { year: "FY2024", totalFunds: 471875565, grantsCount: 5368, avgGrant: 87905, socialServices: 256683683, youthEducation: 61736169, artsCulture: 50050000, healthWellness: 78185113, environmentPublicSpace: 25220600 },
-  { year: "FY2025", totalFunds: 534913682, grantsCount: 5646, avgGrant: 94742, socialServices: 306066473, youthEducation: 64436169, artsCulture: 50050000, healthWellness: 82895440, environmentPublicSpace: 31465600 },
-  { year: "FY2026", totalFunds: 665080021, grantsCount: 5838, avgGrant: 113923, socialServices: 406587864, youthEducation: 94653217, artsCulture: 34350000, healthWellness: 98495440, environmentPublicSpace: 30993500 },
-  { year: "FY2027", totalFunds: 655764999, grantsCount: 6118, avgGrant: 107186, socialServices: 395837843, youthEducation: 94513217, artsCulture: 34350000, healthWellness: 99320439, environmentPublicSpace: 31743500 }
+  { year: "FY2021", totalFunds: 304268931, grantsCount: 1810, avgGrant: 168104, socialServices: 185542450, youthEducation: 21769159, artsCulture: 42844158, healthWellness: 41822699, environmentPublicSpace: 12290465 },
+  { year: "FY2022", totalFunds: 465728895, grantsCount: 1492, avgGrant: 312151, socialServices: 323127277, youthEducation: 23005040, artsCulture: 36189270, healthWellness: 54756585, environmentPublicSpace: 28650723 },
+  { year: "FY2023", totalFunds: 486446095, grantsCount: 1848, avgGrant: 263228, socialServices: 211553002, youthEducation: 109427912, artsCulture: 54498862, healthWellness: 86046913, environmentPublicSpace: 24919406 },
+  { year: "FY2024", totalFunds: 471875565, grantsCount: 5368, avgGrant: 87905, socialServices: 254213487, youthEducation: 63424658, artsCulture: 50381072, healthWellness: 78588837, environmentPublicSpace: 25267511 },
+  { year: "FY2025", totalFunds: 534913682, grantsCount: 5646, avgGrant: 94742, socialServices: 303135692, youthEducation: 66313768, artsCulture: 50581735, healthWellness: 83373650, environmentPublicSpace: 31508837 },
+  { year: "FY2026", totalFunds: 665080021, grantsCount: 5838, avgGrant: 113923, socialServices: 328199926, youthEducation: 143661278, artsCulture: 49179653, healthWellness: 112096001, environmentPublicSpace: 31943163 },
+  { year: "FY2027", totalFunds: 655764999, grantsCount: 6118, avgGrant: 107186, socialServices: 325701199, youthEducation: 137118905, artsCulture: 48254695, healthWellness: 110267520, environmentPublicSpace: 34422680 }
 ];
 
 // Real category-level growth, FY2020 -> FY2026, parsed directly from each year's reconciliation

@@ -1,0 +1,86 @@
+# Schedule C Reconciliation Data (FY2009 – FY2027)
+
+Organized, machine-readable tables parsed from the NYC Council **Schedule C**
+(discretionary funding) reconciliation reports published by
+[BetaNYC/New-York-City-Budget](https://github.com/BetaNYC/New-York-City-Budget),
+specifically `data/fyNN/schedule_c/fyNN_schedule_c_reconciliation.txt` for each
+fiscal year NN = 09..27.
+
+This directory exists so every number that ends up in
+`src/data/budgetData.ts` is traceable back to a committed, versioned source
+file in this repo, instead of only living in an ad-hoc fetch that was never
+saved.
+
+## Layout
+
+- `fyNN.json` — one file per fiscal year, parsed into a structured table:
+  - `categories`: every category line from the reconciliation table
+    (`category`, `initiatives` $, `printed` $, `status` — `"OK"` or a
+    `"DIFF +/-N"` mismatch between the initiatives worksheet and the
+    printed/adopted budget).
+  - `grandTotal`: `{ initiatives, printed }` — the `GRAND TOTAL` row. The
+    **`printed`** column is the authoritative adopted-budget figure used
+    everywhere in this app as `totalFunds` (`NYC_BUDGET_OVERVIEW`,
+    `HISTORICAL_TREND_DATA`, ledger cards).
+  - `reconciliationStatus` — the "N/M categories exact" note from the source.
+  - `awardLevel` — present for FY2015–FY2027 only: `{ rows, dollarTotal,
+    memberItems, initiativeProviders, appendixAAging, appendixBLocal,
+    appendixCYouth }`. `rows` is the real, sourced count of individual
+    award/EIN line items for that year — this is the `grantsCount` figure
+    used in `HISTORICAL_TREND_DATA`.
+  - `initiativesRowCount` — present for FY2009–FY2014 only ("early-era"
+    filings). These years have **no** award/EIN-level breakdown at all — the
+    source PDFs only reconcile at the initiative-line level, so there is no
+    real "number of grants awarded" to report, and `grantsCount` is correctly
+    left undefined for these six years in `budgetData.ts`.
+- `raw/fyNN.txt` — the original plain-text reconciliation report each
+  `fyNN.json` was parsed from (as fetched from BetaNYC's repo), kept for
+  auditability.
+- `index.json` — one row per fiscal year with the headline figures
+  (`grandTotalPrinted`, `awardRows`, `awardDollarTotal`, `initiativesRowCount`)
+  for quick cross-referencing without opening all 19 files.
+- `sector-category-mapping.json` — **not sourced from BetaNYC.** The reconciliation
+  files only report dollars per named category (e.g. `CRIMINAL JUSTICE SERVICES`,
+  `CULTURAL ORGANIZATIONS`) — there is no "sector" concept in the source at all.
+  This file is our own editorial classification, grouping every real category
+  name used across all 19 years (including every rename/typo BetaNYC's own
+  filings used, e.g. `CULTURAL ORGANZIATIONS` vs `CULTURAL ORGANIZATIONS`) into
+  one of 5 buckets (`socialServices`, `youthEducation`, `artsCulture`,
+  `healthWellness`, `environmentPublicSpace`) so the Historical Timeline chart's
+  "Nonprofit Sectors" view has something to plot. The dollar amounts that feed
+  each bucket are 100% real (each category's `printed` value); only the
+  grouping label is ours. For every year, the 5 bucket sums add up exactly to
+  that year's real Grand Total — see `verification` in the file itself.
+- `speaker-initiative-analysis.json` — **also not sourced as a "sector".** The
+  reconciliation category `Speaker's Initiative to Address Citywide Needs` is a
+  content-free catch-all (in FY27 it's $86.5M / 13.2% of the whole budget with
+  no service label). This file decodes it using the award-level file
+  `combined/all_years_awards.csv`, where every award carries an administering
+  **agency** — so the Speaker's dollars are split across the 5 sectors by agency
+  (DYCD→youth, DCLA→arts, DHMH/DFTA→health, DPR→environment, else→social) for
+  FY2020–FY2027. This is why the FY27 "Social Services" share dropped from 60.4%
+  (Speaker's dumped into social) to 49.7% (Speaker's split by agency). The file
+  documents the agency→sector map, the FY27 agency + named-program breakdown,
+  per-year handling, and the caveats (esp. DYCD wholesale→youth, and FY17/FY18
+  carrying undeciphered Speaker dollars that predate award-level tagging).
+
+## Important caveat: award-count coverage varies by year
+
+`awardLevel.dollarTotal` (the sum of individually-attributed award rows) is
+**not** the same as `grandTotal.printed` (the year's total discretionary
+budget) for any year — a portion of every year's Schedule C total is
+lump-sum/citywide funding that the source data does not break out to
+individual EIN-level awards. Coverage ranges from ~28% (FY2016) up to ~92%
+(FY2027). `avgGrant` in `budgetData.ts` is computed as
+`grandTotal.printed / awardLevel.rows` for consistency with the FY2027 ledger
+card convention — treat it as "total discretionary dollars normalized by
+number of tracked awards," not a literal average award-check size.
+
+## Regenerating
+
+These files were generated by fetching each year's `.txt` file from
+`raw.githubusercontent.com/BetaNYC/New-York-City-Budget/main/data/fyNN/schedule_c/fyNN_schedule_c_reconciliation.txt`
+and parsing the fixed-width `CATEGORY / initiatives / printed / status` table
+plus the trailing `awards: N rows $N` / `initiatives rows: N` summary line.
+If BetaNYC republishes a corrected reconciliation file, re-fetch and re-parse
+rather than hand-editing the JSON here.

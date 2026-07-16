@@ -1,0 +1,182 @@
+{
+  "fiscalYear": "FY2015",
+  "sourceFile": "fy2015-FY15-Schedule-C-Template-Final.pdf",
+  "sourcePages": 292,
+  "parserEra": "modern",
+  "categories": [
+    {
+      "category": "ANTI-GUN VIOLENCE INITIATIVE",
+      "initiatives": 6700000,
+      "printed": 6700000,
+      "status": "OK"
+    },
+    {
+      "category": "ANTI-POVERTY INITIATIVE",
+      "initiatives": 2800000,
+      "printed": 2800000,
+      "status": "OK"
+    },
+    {
+      "category": "CHILDREN’S SERVICES",
+      "initiatives": 18023000,
+      "printed": 18023000,
+      "status": "OK"
+    },
+    {
+      "category": "CRIMINAL JUSTICE SERVICES",
+      "initiatives": 5800000,
+      "printed": 5800000,
+      "status": "OK"
+    },
+    {
+      "category": "CULTURAL AFFAIRS",
+      "initiatives": 9600000,
+      "printed": 9600000,
+      "status": "OK"
+    },
+    {
+      "category": "CUNY",
+      "initiatives": 16790000,
+      "printed": 16790000,
+      "status": "OK"
+    },
+    {
+      "category": "DOMESTIC VIOLENCE",
+      "initiatives": 5950000,
+      "printed": 5950000,
+      "status": "OK"
+    },
+    {
+      "category": "EDUCATION",
+      "initiatives": 22310000,
+      "printed": 22310000,
+      "status": "OK"
+    },
+    {
+      "category": "ENVIRONMENTAL INITIATIVES",
+      "initiatives": 4250000,
+      "printed": 4250000,
+      "status": "OK"
+    },
+    {
+      "category": "FOOD INITIATIVES",
+      "initiatives": 2315000,
+      "printed": 2315000,
+      "status": "OK"
+    },
+    {
+      "category": "GOVERNMENT OFFICIALS",
+      "initiatives": 350000,
+      "printed": 350000,
+      "status": "OK"
+    },
+    {
+      "category": "HOMELESS SERVICES",
+      "initiatives": 500000,
+      "printed": 500000,
+      "status": "OK"
+    },
+    {
+      "category": "HOUSING",
+      "initiatives": 23600000,
+      "printed": 23600000,
+      "status": "OK"
+    },
+    {
+      "category": "IMMIGRANT SERVICES",
+      "initiatives": 7100000,
+      "printed": 7100000,
+      "status": "OK"
+    },
+    {
+      "category": "LEGAL SERVICES",
+      "initiatives": 11760000,
+      "printed": 11760000,
+      "status": "OK"
+    },
+    {
+      "category": "LIBRARIES",
+      "initiatives": 5000000,
+      "printed": 5000000,
+      "status": "OK"
+    },
+    {
+      "category": "MENTAL HEALTH SERVICES",
+      "initiatives": 1990000,
+      "printed": 1990000,
+      "status": "OK"
+    },
+    {
+      "category": "PARKS AND RECREATION",
+      "initiatives": 11150000,
+      "printed": 11150000,
+      "status": "OK"
+    },
+    {
+      "category": "PUBLIC SAFETY",
+      "initiatives": 7200000,
+      "printed": 7200000,
+      "status": "OK"
+    },
+    {
+      "category": "SENIOR SERVICES",
+      "initiatives": 11305000,
+      "printed": 11305000,
+      "status": "OK"
+    },
+    {
+      "category": "SMALL BUSINESS SERVICES AND WORKFORCE DEVELOPMENT",
+      "initiatives": 12561000,
+      "printed": 12561000,
+      "status": "OK"
+    },
+    {
+      "category": "TAX COMMISSION",
+      "initiatives": 424000,
+      "printed": 424000,
+      "status": "OK"
+    },
+    {
+      "category": "VETERANS SERVICES",
+      "initiatives": 400000,
+      "printed": 400000,
+      "status": "OK"
+    },
+    {
+      "category": "YOUTH AND COMMUNITY DEVELOPMENT",
+      "initiatives": 45560000,
+      "printed": 45560000,
+      "status": "OK"
+    }
+  ],
+  "grandTotal": {
+    "initiatives": 233438000,
+    "printed": 233438000
+  },
+  "reconciliationStatus": "24/24 reconcilable categories exact",
+  "awardLevel": {
+    "rows": 652,
+    "dollarTotal": 73199837,
+    "memberItems": {
+      "rows": 172,
+      "dollarTotal": 1625000
+    },
+    "initiativeProviders": {
+      "rows": 480,
+      "dollarTotal": 71574837
+    },
+    "appendixAAging": {
+      "rows": 0,
+      "dollarTotal": 0
+    },
+    "appendixBLocal": {
+      "rows": 0,
+      "dollarTotal": 0
+    },
+    "appendixCYouth": {
+      "rows": 0,
+      "dollarTotal": 0
+    }
+  },
+  "initiativesRowCount": null
+}

@@ -124,6 +124,29 @@ const CustomSectorsTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
+const CustomFocusAreaTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const item = payload[0].payload;
+    return (
+      <div className="bg-[#F9F8F3] border-2 border-[#1A1A1A] p-3 shadow-[3px_3px_0px_0px_#1A1A1A] font-mono text-xs text-[#1A1A1A] min-w-[220px] max-w-[300px]">
+        <div className="flex items-start gap-2 border-b border-[#1A1A1A] pb-1.5 mb-2">
+          <span className="w-2.5 h-2.5 shrink-0 mt-0.5" style={{ backgroundColor: item.color }} />
+          <span className="font-bold leading-tight">{item.name}</span>
+        </div>
+        <div className="flex justify-between items-center gap-4">
+          <span className="text-[#555] text-[10px] uppercase tracking-wide">FY27 Funding</span>
+          <span className="font-bold">{formatCurrency(item.totalFunds)}</span>
+        </div>
+        <div className="flex justify-between items-center gap-4 mt-1">
+          <span className="text-[#555] text-[10px] uppercase tracking-wide">Share of Grand Total</span>
+          <span className="font-bold text-[#F27D26]">{item.percentage}%</span>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
 export default function BudgetAnalytics() {
   const [selectedAgency, setSelectedAgency] = useState<string | null>(null);
 
@@ -540,35 +563,35 @@ export default function BudgetAnalytics() {
                 color: "#003B71",
                 trending: "Expanded Emergency Food Assistance Programs (EFAP), local pantries, elder meal-delivery runs, and housing eviction defense legal advocacy.",
                 keywords: ["Emergency Pantries", "Crisis Kitchens", "Eviction Defense", "Eldercare Meals"],
-                pct: "60.4% of FY27 (real)"
+                pct: "49.7% of FY27 (real)"
               },
               youthEducation: {
                 label: "Youth Services & Education",
                 color: "#F27D26",
                 trending: "Expansion of math/science academies, digital literacy campaigns, free coding camps, and after-school tutoring labs in historically underfunded districts.",
                 keywords: ["Robotics Labs", "Free Coding Academies", "After-school Enrichment", "Homework Help"],
-                pct: "14.4% of FY27 (real)"
+                pct: "20.9% of FY27 (real)"
               },
               artsCulture: {
                 label: "Arts & Culture",
                 color: "#D9A406",
                 trending: "Decentralized neighborhood block festivals, cultural fairs, public theater programs, and local heritage ensemble workshops.",
                 keywords: ["Block Fairs", "Heritage Festivals", "Community Theaters", "Folk Art Classes"],
-                pct: "5.2% of FY27 (real)"
+                pct: "7.4% of FY27 (real)"
               },
               healthWellness: {
                 label: "Health & Community Wellness",
                 color: "#2E7D32",
                 trending: "Maternal care navigation, local doula coalitions, peer-led mental health sessions, and mobile health testing centers.",
                 keywords: ["Doula Guides", "Peer Counseling Nets", "Mobile Health Vans", "Wellness Seminars"],
-                pct: "15.1% of FY27 (real)"
+                pct: "16.8% of FY27 (real)"
               },
               environmentPublicSpace: {
                 label: "Environment & Public Space",
                 color: "#00838F",
                 trending: "Urban agriculture programs, greening preservation, clean neighborhood sweeps, and community garden soil remediation actions.",
                 keywords: ["Garden Preservation", "Beautification Actions", "Neighborhood Clean-ups", "Greening Pilots"],
-                pct: "4.8% of FY27 (real)"
+                pct: "5.2% of FY27 (real)"
               }
             };
 
@@ -615,7 +638,7 @@ export default function BudgetAnalytics() {
                   margin={{ top: 15, right: 20, left: 15, bottom: 10 }}
                 >
                   <CartesianGrid strokeDasharray="2 2" vertical={false} stroke="#D9D7CE" />
-                  <XAxis dataKey="year" stroke="#1A1A1A" fontSize={11} tickLine={true} />
+                  <XAxis dataKey="year" stroke="#1A1A1A" fontSize={9} tickLine={true} interval={0} />
                   <YAxis
                     yAxisId="left"
                     stroke="#003B71"
@@ -634,7 +657,8 @@ export default function BudgetAnalytics() {
                   <Tooltip
                     formatter={(value: any, name: string) => {
                       if (name === "totalFunds") return [formatCurrency(Number(value)), "Total Funds"];
-                      if (name === "grantsCount") return [Number(value).toLocaleString(), "Awards Count"];
+                      if (name === "grantsCount") return [Number(value).toLocaleString(), "Awards Count (EIN-level, FY15+)"];
+                      if (name === "initiativeLineItems") return [Number(value).toLocaleString(), "Initiative Line Items (FY09-14, not award-level)"];
                       return [value, name];
                     }}
                     contentStyle={{ backgroundColor: "#F9F8F3", border: "2px solid #1A1A1A", borderRadius: "0px" }}
@@ -661,6 +685,17 @@ export default function BudgetAnalytics() {
                     strokeWidth={2}
                     dot={{ r: 3, stroke: "#F27D26", strokeWidth: 1 }}
                   />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="initiativeLineItems"
+                    name="Initiative Line Items (FY09-14, not award-level)"
+                    stroke="#8F8D83"
+                    strokeWidth={2}
+                    strokeDasharray="4 3"
+                    dot={{ r: 3, stroke: "#8F8D83", strokeWidth: 1 }}
+                    connectNulls={false}
+                  />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
@@ -670,7 +705,7 @@ export default function BudgetAnalytics() {
                   margin={{ top: 15, right: 20, left: 15, bottom: 10 }}
                 >
                   <CartesianGrid strokeDasharray="2 2" vertical={false} stroke="#D9D7CE" />
-                  <XAxis dataKey="year" stroke="#1A1A1A" fontSize={11} tickLine={true} />
+                  <XAxis dataKey="year" stroke="#1A1A1A" fontSize={9} tickLine={true} interval={0} />
                   <YAxis
                     stroke="#003B71"
                     fontSize={11}
@@ -737,35 +772,35 @@ export default function BudgetAnalytics() {
                 color: "#003B71",
                 trending: "Expanded Emergency Food Assistance Programs (EFAP), local pantries, elder meal-delivery runs, and housing eviction defense legal advocacy.",
                 keywords: ["Emergency Pantries", "Crisis Kitchens", "Tenant Eviction Counsel", "Senior Center Meals"],
-                pct: "60.4% of FY27 (real)"
+                pct: "49.7% of FY27 (real)"
               },
               youthEducation: {
                 label: "Youth Services & Education",
                 color: "#F27D26",
                 trending: "Expansion of math/science academies, digital literacy campaigns, free coding camps, and after-school tutoring labs in historically underfunded districts.",
                 keywords: ["Robotics Labs", "Free Coding Academies", "After-school Enrichment", "Homework Help"],
-                pct: "14.4% of FY27 (real)"
+                pct: "20.9% of FY27 (real)"
               },
               artsCulture: {
                 label: "Arts & Culture",
                 color: "#D9A406",
                 trending: "Decentralized neighborhood block festivals, cultural fairs, public theater programs, and local heritage ensemble workshops.",
                 keywords: ["Block Fairs", "Heritage Festivals", "Community Theaters", "Folk Art Classes"],
-                pct: "5.2% of FY27 (real)"
+                pct: "7.4% of FY27 (real)"
               },
               healthWellness: {
                 label: "Health & Community Wellness",
                 color: "#2E7D32",
                 trending: "Maternal care navigation, local doula coalitions, peer-led mental health sessions, and mobile health testing centers.",
                 keywords: ["Doula Guides", "Peer Counseling Nets", "Mobile Health Vans", "Wellness Seminars"],
-                pct: "15.1% of FY27 (real)"
+                pct: "16.8% of FY27 (real)"
               },
               environmentPublicSpace: {
                 label: "Environment & Public Space",
                 color: "#00838F",
                 trending: "Urban agriculture programs, greening preservation, clean neighborhood sweeps, and community garden soil remediation actions.",
                 keywords: ["Garden Preservation", "Beautification Actions", "Neighborhood Clean-ups", "Greening Pilots"],
-                pct: "4.8% of FY27 (real)"
+                pct: "5.2% of FY27 (real)"
               }
             };
 
@@ -775,9 +810,13 @@ export default function BudgetAnalytics() {
                   <div>
                     <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-[#F27D26] mb-2">Overview of Nonprofit Sectors</h4>
                     <p className="text-xs text-[#1A1A1A] font-sans leading-relaxed">
-                      Discretionary funding over the past two decades has increasingly centered around community safety-nets. In real FY2027 data,
-                      <strong> Social Services</strong> is the largest slice (60.4%), followed by <strong>Health & Wellness</strong> (15.1%) and <strong>Youth & Education</strong> (14.4%).
-                      Select a specific spotlight button above to filter lines and read the real per-year figures.
+                      Discretionary funding over the past two decades has centered around community safety-nets. In real FY2027 data,
+                      <strong> Social Services</strong> is the largest slice (49.7%), followed by <strong>Youth &amp; Education</strong> (20.9%),
+                      <strong> Health &amp; Wellness</strong> (16.8%), <strong>Arts &amp; Culture</strong> (7.4%), and <strong>Environment &amp; Public Space</strong> (5.2%).
+                      The Council&apos;s $86.5M &ldquo;Speaker&apos;s Initiative to Address Citywide Needs&rdquo; carries no service label in the summary data, so its
+                      dollars are split across sectors by each award&apos;s administering agency (DYCD&rarr;Youth, DCLA&rarr;Arts, DHMH/DFTA&rarr;Health, etc.)
+                      from the award-level file &mdash; see data/schedule-c-reconciliation/speaker-initiative-analysis.json.
+                      Select a spotlight button above to filter lines and read the real per-year figures.
                     </p>
                   </div>
                 ) : (
@@ -1157,19 +1196,13 @@ export default function BudgetAnalytics() {
                     outerRadius={85}
                     paddingAngle={2}
                     dataKey="totalFunds"
+                    nameKey="name"
                   >
-                    {FOCUS_AREA_DATA.map((entry, index) => {
-                      // Map standard colors to editorial palette matching DSSG Blue and Orange
-                      const palette = ["#003B71", "#F27D26", "#8F8D83", "#134074", "#D46B13", "#546A7B", "#B5B3A9", "#7B8A7A", "#C84B31", "#D9A406"];
-                      const color = palette[index % palette.length];
-                      return <Cell key={`cell-${index}`} fill={color} stroke="#F9F8F3" strokeWidth={2} />;
-                    })}
+                    {FOCUS_AREA_DATA.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} stroke="#F9F8F3" strokeWidth={2} />
+                    ))}
                   </Pie>
-                  <Tooltip
-                    formatter={(value: any) => [formatCurrency(Number(value)), "Funding"]}
-                    contentStyle={{ backgroundColor: "#F9F8F3", border: "2px solid #1A1A1A", borderRadius: "0px" }}
-                    itemStyle={{ color: "#1A1A1A", fontSize: "11px", fontFamily: "monospace" }}
-                  />
+                  <Tooltip content={<CustomFocusAreaTooltip />} />
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute flex flex-col items-center justify-center text-center pointer-events-none">
@@ -1181,22 +1214,18 @@ export default function BudgetAnalytics() {
           
           {/* Custom Grid Legend */}
           <div className="grid grid-cols-1 gap-2.5 mt-6 pt-4 border-t border-[#1A1A1A]/10 text-xs" id="focus-pie-legend">
-            {FOCUS_AREA_DATA.map((area, index) => {
-              const palette = ["#003B71", "#F27D26", "#8F8D83", "#134074", "#D46B13", "#546A7B", "#B5B3A9", "#7B8A7A"];
-              const color = palette[index % palette.length];
-              return (
-                <div key={index} className="flex items-center justify-between gap-2 border-b border-[#E5E3DB] pb-1.5 last:border-0" id={`legend-item-${index}`}>
-                  <div className="flex items-center gap-2 truncate">
-                    <span className="w-2.5 h-2.5 rounded-none shrink-0" style={{ backgroundColor: color }} />
-                    <span className="font-bold text-[#1A1A1A] truncate">{area.name}</span>
-                  </div>
-                  <div className="flex gap-2 text-[11px] font-mono shrink-0">
-                    <span className="text-[#555]">{formatCurrency(area.totalFunds)}</span>
-                    <span className="font-bold text-[#F27D26]">({area.percentage}%)</span>
-                  </div>
+            {FOCUS_AREA_DATA.map((area, index) => (
+              <div key={index} className="flex items-center justify-between gap-2 border-b border-[#E5E3DB] pb-1.5 last:border-0" id={`legend-item-${index}`}>
+                <div className="flex items-center gap-2 truncate">
+                  <span className="w-2.5 h-2.5 rounded-none shrink-0" style={{ backgroundColor: area.color }} />
+                  <span className="font-bold text-[#1A1A1A] truncate">{area.name}</span>
                 </div>
-              );
-            })}
+                <div className="flex gap-2 text-[11px] font-mono shrink-0">
+                  <span className="text-[#555]">{formatCurrency(area.totalFunds)}</span>
+                  <span className="font-bold text-[#F27D26]">({area.percentage}%)</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 

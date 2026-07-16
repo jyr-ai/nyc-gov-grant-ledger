@@ -1,0 +1,147 @@
+{
+  "fiscalYear": "FY2009",
+  "sourceFile": "fy09-Schedule-C-final.pdf",
+  "sourcePages": 246,
+  "parserEra": "early-era",
+  "categories": [
+    {
+      "category": "CHILDREN SERVICES",
+      "initiatives": 5200000,
+      "printed": 5200000,
+      "status": "OK"
+    },
+    {
+      "category": "CULTURAL ORGANZIATIONS AND LIBRARIES",
+      "initiatives": 21800000,
+      "printed": 21800000,
+      "status": "OK"
+    },
+    {
+      "category": "DISCHARGE PLANNING AND AFTERCARE SERVICES",
+      "initiatives": 640000,
+      "printed": 640000,
+      "status": "OK"
+    },
+    {
+      "category": "DOMESTIC VIOLENCE",
+      "initiatives": 4470000,
+      "printed": 4470000,
+      "status": "OK"
+    },
+    {
+      "category": "EDUCATION",
+      "initiatives": 143610000,
+      "printed": 143610000,
+      "status": "OK"
+    },
+    {
+      "category": "ELECTED OFFICIALS",
+      "initiatives": 10799555,
+      "printed": 10799555,
+      "status": "OK"
+    },
+    {
+      "category": "HEALTH SERVICES AND PREVENTION",
+      "initiatives": 25531000,
+      "printed": 26031000,
+      "status": "DIFF -500,000"
+    },
+    {
+      "category": "HIGHER EDUCATION",
+      "initiatives": 34785000,
+      "printed": 34785000,
+      "status": "OK"
+    },
+    {
+      "category": "HOMELESS SERVICES",
+      "initiatives": 1150000,
+      "printed": 1150000,
+      "status": "OK"
+    },
+    {
+      "category": "HOUSING",
+      "initiatives": 4850000,
+      "printed": 4850000,
+      "status": "OK"
+    },
+    {
+      "category": "IMMIGRANT SERVICES",
+      "initiatives": 5000000,
+      "printed": 5000000,
+      "status": "OK"
+    },
+    {
+      "category": "JOB DEVELOPMENT",
+      "initiatives": 8784000,
+      "printed": 8784000,
+      "status": "OK"
+    },
+    {
+      "category": "LEGAL SERVICES",
+      "initiatives": 18650000,
+      "printed": 18650000,
+      "status": "OK"
+    },
+    {
+      "category": "MENTAL HEALTH SERVICES",
+      "initiatives": 7570749,
+      "printed": 7570749,
+      "status": "OK"
+    },
+    {
+      "category": "PARKS AND RECREATION",
+      "initiatives": 1000000,
+      "printed": 1000000,
+      "status": "OK"
+    },
+    {
+      "category": "PUBLIC SAFETY / CRIMINAL JUSTICE SERVICES",
+      "initiatives": 5600000,
+      "printed": 5600000,
+      "status": "OK"
+    },
+    {
+      "category": "SANITATION",
+      "initiatives": 1400000,
+      "printed": 1400000,
+      "status": "OK"
+    },
+    {
+      "category": "SENIOR SERVICES",
+      "initiatives": 33983000,
+      "printed": 33983000,
+      "status": "OK"
+    },
+    {
+      "category": "SEXUAL ASSAULT SERVICES",
+      "initiatives": 332500,
+      "printed": 332500,
+      "status": "OK"
+    },
+    {
+      "category": "SMALL BUSINESS SERVICES",
+      "initiatives": 2778000,
+      "printed": 2778000,
+      "status": "OK"
+    },
+    {
+      "category": "SOCIAL SERVICES",
+      "initiatives": 2275000,
+      "printed": 2275000,
+      "status": "OK"
+    },
+    {
+      "category": "YOUTH AND COMMUNITY DEVELOPMENT",
+      "initiatives": 22675000,
+      "printed": 22675000,
+      "status": "OK"
+    }
+  ],
+  "grandTotal": {
+    "initiatives": 362883804,
+    "printed": 363383804
+  },
+  "reconciliationStatus": "21/22 categories exact",
+  "awardLevel": null,
+  "initiativesRowCount": 123
+}
