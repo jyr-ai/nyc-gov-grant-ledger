@@ -923,7 +923,7 @@ export default function BudgetAnalytics() {
               <History className="w-4 h-4 shrink-0 mt-0.5" />
               <div className="space-y-0.5">
                 <span className="font-serif font-bold block">2. Multi-Year Sponsoring History</span>
-                <span className="text-[10px] opacity-80 block">Show discretionary awards sponsored by CM [name] from FY2024 to FY2027.</span>
+                <span className="text-[10px] opacity-80 block">Show discretionary awards sponsored by Council Members from FY2024 to FY2027.</span>
               </div>
             </button>
 
