@@ -21,6 +21,7 @@
 
 import path from "path";
 import fs from "fs";
+import os from "os";
 
 export interface McpTool {
   name: string;
@@ -74,6 +75,95 @@ function resolveMcpEntry(): string {
   );
 }
 
+// Stage the MCP server into a WRITABLE temp dir before spawning it.
+//
+// Why this is necessary: the published package opens its SQLite index with
+// `new Database(path, { readonly: true })`, and the shipped `budget.db` is in
+// WAL journal mode. Opening a WAL database — even read-only — requires SQLite to
+// create a `-shm` shared-memory file next to the database. On serverless hosts
+// (Vercel/AWS Lambda) the deployment filesystem, including `node_modules`, is
+// mounted READ-ONLY, so that `-shm` create fails with EROFS and surfaces as
+// SQLITE_CANTOPEN ("unable to open database file"). Locally it works only
+// because the dev filesystem is writable.
+//
+// Fix: copy the server's `dist/`, `package.json`, and `data/budget.db` into
+// `os.tmpdir()` (the one writable location on Lambda), convert the copied DB out
+// of WAL mode so no sidecar files are needed at all, and run the server from
+// there. A `node_modules` symlink back to the real install lets the relocated
+// ESM entry still resolve better-sqlite3 / the MCP SDK / zod.
+const STAGE_DIR = path.join(os.tmpdir(), "nyc-budget-mcp-stage");
+let stagedEntry: string | null = null;
+
+async function convertDbOutOfWal(dbFile: string): Promise<void> {
+  try {
+    const mod: any = await import("better-sqlite3");
+    const Database = mod.default || mod;
+    const db = new Database(dbFile);
+    db.pragma("wal_checkpoint(TRUNCATE)");
+    db.pragma("journal_mode=DELETE");
+    db.close();
+  } catch {
+    // Best-effort. Even without the conversion, the DB now lives on a writable
+    // filesystem (tmp), so SQLite can create the WAL sidecars it needs.
+  }
+  for (const suffix of ["-wal", "-shm"]) {
+    try {
+      fs.rmSync(dbFile + suffix, { force: true });
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+/**
+ * Copy the installed MCP server to a writable temp dir and return the path to
+ * its relocated entry. Idempotent: reuses an existing stage within a warm
+ * process/container.
+ */
+async function stageMcpServer(): Promise<string> {
+  if (stagedEntry && fs.existsSync(stagedEntry)) return stagedEntry;
+
+  const installedEntry = resolveMcpEntry(); // <pkg>/dist/index.js
+  const pkgDir = path.dirname(path.dirname(installedEntry)); // <pkg>
+  const nodeModulesRoot = path.dirname(path.dirname(pkgDir)); // .../node_modules
+
+  const stageEntry = path.join(STAGE_DIR, "dist", "index.js");
+  const stageDb = path.join(STAGE_DIR, "data", "budget.db");
+  const stageNodeModules = path.join(STAGE_DIR, "node_modules");
+
+  // If a previous invocation already staged everything, reuse it.
+  if (fs.existsSync(stageEntry) && fs.existsSync(stageDb) && fs.existsSync(stageNodeModules)) {
+    stagedEntry = stageEntry;
+    return stageEntry;
+  }
+
+  fs.mkdirSync(path.join(STAGE_DIR, "data"), { recursive: true });
+
+  // Relocate the code + database (fresh copy — never the stale WAL sidecars).
+  fs.cpSync(path.join(pkgDir, "dist"), path.join(STAGE_DIR, "dist"), { recursive: true });
+  const pkgJson = path.join(pkgDir, "package.json");
+  if (fs.existsSync(pkgJson)) fs.copyFileSync(pkgJson, path.join(STAGE_DIR, "package.json"));
+  fs.copyFileSync(path.join(pkgDir, "data", "budget.db"), stageDb);
+
+  await convertDbOutOfWal(stageDb);
+
+  // Let the relocated ESM entry resolve its dependencies from the real install.
+  if (!fs.existsSync(stageNodeModules)) {
+    try {
+      fs.symlinkSync(nodeModulesRoot, stageNodeModules, "dir");
+    } catch {
+      // Symlink unsupported/blocked — fall back to running from the original
+      // location and hope the FS is writable (dev). Signaled by returning the
+      // installed entry instead of the staged one.
+      stagedEntry = installedEntry;
+      return installedEntry;
+    }
+  }
+
+  stagedEntry = stageEntry;
+  return stageEntry;
+}
+
 function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(
@@ -99,7 +189,9 @@ async function connect(): Promise<AnyMcpClient> {
   if (connectPromise) return connectPromise;
 
   connectPromise = (async () => {
-    const entry = resolveMcpEntry();
+    // Run from a writable temp copy so the read-only-filesystem WAL problem
+    // (SQLITE_CANTOPEN on serverless) can't occur.
+    const entry = await stageMcpServer();
     const { Client } = await import("@modelcontextprotocol/sdk/client/index.js");
     const { StdioClientTransport } = await import(
       "@modelcontextprotocol/sdk/client/stdio.js"
