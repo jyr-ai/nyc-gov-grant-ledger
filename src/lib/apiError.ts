@@ -116,6 +116,26 @@ function classify(
 ): { title: string; explanation: string } {
   const body = (raw || "").toUpperCase();
 
+  // Daily usage quota exhausted (checked FIRST so it wins even when the quota
+  // signal is wrapped inside a 500 "both providers failed" body). Gemini's free
+  // tier caps generate_content at a fixed number of requests PER DAY; once hit it
+  // returns 429 RESOURCE_EXHAUSTED until the quota resets (midnight Pacific). This
+  // is a usage limit, NOT a network/server fault, and must be labeled as such.
+  if (
+    status === 429 ||
+    body.includes("RESOURCE_EXHAUSTED") ||
+    body.includes("EXCEEDED YOUR CURRENT QUOTA") ||
+    body.includes("QUOTA EXCEEDED FOR METRIC") ||
+    body.includes("FREE_TIER_REQUESTS") ||
+    body.includes("PERDAY")
+  ) {
+    return {
+      title: "Daily usage limit reached",
+      explanation:
+        "The AI provider's per-day request quota has been used up (Gemini free tier allows only a fixed number of requests per day). This is a usage limit, not a network or server error — no fix is needed on your side. The quota resets automatically (Gemini resets at midnight Pacific); the app also falls back to the Anthropic Claude engine when Gemini is exhausted. To raise the ceiling, enable billing on the Gemini API project."
+    };
+  }
+
   // Vercel platform crash — the function threw or failed to boot/bundle.
   if (
     body.includes("FUNCTION_INVOCATION_FAILED") ||
