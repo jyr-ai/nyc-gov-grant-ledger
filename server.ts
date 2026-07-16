@@ -8,6 +8,14 @@ import {
   CAPITAL_BY_BOROUGH,
   BUDGET_INITIATIVES
 } from "./src/data/budgetData.js"; // .js extension required for Node ESM on Vercel (resolves to the .ts source)
+import {
+  getMcpTools,
+  callMcpToolText,
+  getMcpStatus,
+  toGeminiFunctionDeclarations,
+  toAnthropicTools,
+  type McpToolCallRecord
+} from "./mcpClient.js";
 
 export const app = express();
 const PORT = 3000;
@@ -168,6 +176,287 @@ async function generateAIContent(
     console.error("Anthropic fallback also failed:", anthropicErr);
     throw new Error(`Both primary and backup AI services failed.\nGemini error: ${geminiError.message}\nAnthropic error: ${anthropicErr.message}`);
   }
+}
+
+// ===========================================================================
+// BetaNYC MCP-powered AI agent
+// ===========================================================================
+// The tools below are BetaNYC's real NYC-Budget MCP server tools, backed by the
+// same Schedule C / capital CSV data source the analytics dashboard traces to.
+// The agent loop lets the LLM (Gemini primary, Claude fallback) decide which
+// tools to call, executes them against the live MCP, and feeds the real results
+// back until it can answer — so every figure is grounded in the source, never
+// invented.
+
+const BUDGET_AGENT_SYSTEM = `You are the "Budget Agent", an expert analyst for NYC Council discretionary (Schedule C) funding, embedded in The City Ledger app.
+
+You have live tools backed by BetaNYC's official NYC-Budget dataset (Schedule C award-level data FY2015–FY2027, §254 capital projects, Terms & Conditions, Transparency Resolutions, and the Legistar crosswalk). ALWAYS answer questions about specific organizations, EINs, council members, agencies, initiatives, dollar amounts, award counts, capital projects, or fiscal-year figures by calling these tools and reporting what they return. Never guess or rely on memory for a number that a tool can look up.
+
+Rules of engagement:
+- Prefer a tool call over a guess. If a question needs data, call a tool.
+- \`fiscal_year\` arguments are NUMBERS like 2027 (meaning FY2027), not strings.
+- Respect the data's real coverage. Award/EIN-level data exists only FY2015–FY2027; FY2009–FY2014 are initiatives-only. If asked about a year or dataset outside coverage, say so plainly (call list_available_fiscal_years when unsure).
+- A single EIN can be a fiscal sponsor pooling many programs (e.g. 13-2612524, Fund for the City of New York). When isolating one grantee, also filter by \`program\`.
+- Cite concrete figures from tool output (org name, fiscal year, dollar amount, sponsoring member). Be concise and factual; use plain language and correct public-sector terms (Schedule C, OTPS/PS, PASSPort).
+- If the tools genuinely return nothing, say the data shows no matching records rather than inventing an answer.
+- Attribute the data to BetaNYC's NYC-Budget dataset when giving a substantive answer.`;
+
+const MAX_AGENT_STEPS = 6;
+
+// ---- Gemini function-calling agent loop -----------------------------------
+async function runGeminiAgent(
+  systemInstruction: string,
+  history: Array<{ role: string; content: string }>,
+  tools: any[]
+): Promise<{ answer: string; toolCalls: McpToolCallRecord[] }> {
+  const client = getGeminiClient();
+  if (!client) throw new Error("GEMINI_API_KEY is not configured.");
+
+  const functionDeclarations = toGeminiFunctionDeclarations(tools);
+  // Seed the conversation from the provided history (user/assistant turns).
+  const contents: any[] = history.map((m) => ({
+    role: m.role === "assistant" ? "model" : "user",
+    parts: [{ text: m.content }]
+  }));
+
+  const toolCalls: McpToolCallRecord[] = [];
+
+  for (let step = 0; step < MAX_AGENT_STEPS; step++) {
+    const response: any = await client.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents,
+      config: {
+        systemInstruction,
+        tools: [{ functionDeclarations }]
+      }
+    });
+
+    const candidate = response.candidates?.[0];
+    const parts: any[] = candidate?.content?.parts || [];
+    const calls = parts.filter((p) => p.functionCall).map((p) => p.functionCall);
+
+    if (!calls.length) {
+      return { answer: response.text || "", toolCalls };
+    }
+
+    // Record the model's turn (including its function-call parts).
+    contents.push({ role: "model", parts });
+
+    // Execute each requested tool against the real MCP and feed results back.
+    const responseParts: any[] = [];
+    for (const call of calls) {
+      const name = call.name;
+      const args = call.args || {};
+      let resultText: string;
+      try {
+        resultText = await callMcpToolText(name, args);
+      } catch (err: any) {
+        resultText = `Tool error: ${err?.message || String(err)}`;
+      }
+      toolCalls.push({ name, args, resultText });
+      responseParts.push({
+        functionResponse: { name, response: { result: resultText } }
+      });
+    }
+    contents.push({ role: "user", parts: responseParts });
+  }
+
+  // Ran out of steps — ask the model for a final answer with no more tools.
+  const finalResp: any = await client.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents,
+    config: { systemInstruction }
+  });
+  return { answer: finalResp.text || "", toolCalls };
+}
+
+// ---- Anthropic tool-use agent loop ----------------------------------------
+async function runAnthropicAgent(
+  systemInstruction: string,
+  history: Array<{ role: string; content: string }>,
+  tools: any[]
+): Promise<{ answer: string; toolCalls: McpToolCallRecord[] }> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey || apiKey === "MY_ANTHROPIC_API_KEY") {
+    throw new Error("ANTHROPIC_API_KEY is not configured.");
+  }
+  const anthropicTools = toAnthropicTools(tools);
+  const messages: any[] = history.map((m) => ({
+    role: m.role === "assistant" ? "assistant" : "user",
+    content: m.content
+  }));
+  const toolCalls: McpToolCallRecord[] = [];
+
+  for (let step = 0; step < MAX_AGENT_STEPS; step++) {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        model: CLAUDE_MODEL,
+        max_tokens: 2048,
+        system: systemInstruction,
+        tools: anthropicTools,
+        messages
+      })
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Anthropic API returned status ${response.status}: ${text}`);
+    }
+
+    const data: any = await response.json();
+    const content: any[] = data.content || [];
+    messages.push({ role: "assistant", content });
+
+    if (data.stop_reason !== "tool_use") {
+      const answer = content
+        .filter((b) => b.type === "text")
+        .map((b) => b.text)
+        .join("\n")
+        .trim();
+      return { answer, toolCalls };
+    }
+
+    const toolResults: any[] = [];
+    for (const block of content) {
+      if (block.type !== "tool_use") continue;
+      let resultText: string;
+      try {
+        resultText = await callMcpToolText(block.name, block.input || {});
+      } catch (err: any) {
+        resultText = `Tool error: ${err?.message || String(err)}`;
+      }
+      toolCalls.push({ name: block.name, args: block.input || {}, resultText });
+      toolResults.push({
+        type: "tool_result",
+        tool_use_id: block.id,
+        content: resultText
+      });
+    }
+    messages.push({ role: "user", content: toolResults });
+  }
+
+  // Out of steps — force a final text answer without tools.
+  const finalResp = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "content-type": "application/json"
+    },
+    body: JSON.stringify({
+      model: CLAUDE_MODEL,
+      max_tokens: 2048,
+      system: systemInstruction,
+      messages
+    })
+  });
+  const finalData: any = await finalResp.json();
+  const answer = (finalData.content || [])
+    .filter((b: any) => b.type === "text")
+    .map((b: any) => b.text)
+    .join("\n")
+    .trim();
+  return { answer, toolCalls };
+}
+
+// Provider-agnostic agent runner: Gemini primary, Anthropic fallback.
+async function runBudgetAgent(
+  history: Array<{ role: string; content: string }>
+): Promise<{ answer: string; provider: string; toolCalls: McpToolCallRecord[] }> {
+  const tools = await getMcpTools(); // throws if the MCP subprocess can't start
+
+  const geminiKey = process.env.GEMINI_API_KEY;
+  const hasGemini = geminiKey && geminiKey !== "MY_GEMINI_API_KEY";
+  let geminiError: any = null;
+
+  if (hasGemini) {
+    try {
+      const { answer, toolCalls } = await runGeminiAgent(BUDGET_AGENT_SYSTEM, history, tools);
+      return { answer, provider: "gemini", toolCalls };
+    } catch (err) {
+      console.error("Budget Agent: Gemini failed, trying Anthropic...", err);
+      geminiError = err;
+    }
+  }
+
+  const { answer, toolCalls } = await runAnthropicAgent(BUDGET_AGENT_SYSTEM, history, tools);
+  return { answer, provider: geminiError ? "anthropic (gemini failed)" : "anthropic", toolCalls };
+}
+
+// ---- Real-data grounding for the Matcher / Drafter ------------------------
+// Maps free-text mission/population language to the real Schedule C category
+// names present in the BetaNYC dataset, so we can pull actual FY2027 awards to
+// ground the AI recommendations instead of letting the model free-associate.
+const CATEGORY_KEYWORDS: Array<{ match: RegExp; category: string }> = [
+  { match: /immigra|asylum|refugee|newcomer/i, category: "Immigrant Services" },
+  { match: /mental health|behavioral|suicide|crisis|trauma/i, category: "Mental Health Services" },
+  { match: /senior|older adult|aging|elderly|norc/i, category: "Older Adult Services" },
+  { match: /food|pantry|hunger|nutrition|meal/i, category: "Food Initiatives" },
+  { match: /art|culture|cultural|museum|theater|music|dance/i, category: "Cultural Organizations" },
+  { match: /legal|tenant|eviction|civil rights|know your rights/i, category: "Legal Services" },
+  { match: /youth|child|after.?school|teen|student|stem|tutor|educat/i, category: "Youth Services" },
+  { match: /job|workforce|employ|career|training|small business/i, category: "Small Business Services and Workforce Development" },
+  { match: /violence|criminal justice|reentry|gun|safety/i, category: "Criminal Justice Services" },
+  { match: /housing|homeless|shelter|foreclosure/i, category: "Housing" },
+  { match: /health|clinic|maternal|wellness|hiv|opioid/i, category: "Health Services" }
+];
+
+async function buildRealDataGrounding(opts: {
+  orgName?: string;
+  mission?: string;
+  targetPopulation?: string;
+}): Promise<{ text: string; grounded: boolean }> {
+  const haystack = `${opts.mission || ""} ${opts.targetPopulation || ""}`;
+  const categories: string[] = [];
+  for (const { match, category } of CATEGORY_KEYWORDS) {
+    if (match.test(haystack) && !categories.includes(category)) categories.push(category);
+    if (categories.length >= 3) break;
+  }
+
+  const sections: string[] = [];
+  try {
+    // 1) Has this exact organization been funded before? (real award history)
+    if (opts.orgName && opts.orgName.trim().length >= 4) {
+      const orgHits = await callMcpToolText("search_awards", {
+        organization: opts.orgName.trim(),
+        limit: 6
+      });
+      if (orgHits && !/^0 award|no result|\(no result\)/i.test(orgHits)) {
+        sections.push(`PRIOR AWARD HISTORY for "${opts.orgName}" (from BetaNYC Schedule C):\n${orgHits}`);
+      }
+    }
+
+    // 2) Real FY2027 awards in the categories this org's mission aligns to.
+    for (const category of categories) {
+      const catHits = await callMcpToolText("search_awards", {
+        category,
+        fiscal_year: 2027,
+        limit: 6
+      });
+      if (catHits) {
+        sections.push(`REAL FY2027 "${category}" awards (sample from BetaNYC Schedule C):\n${catHits}`);
+      }
+    }
+  } catch (err: any) {
+    return {
+      text: "",
+      grounded: false
+    };
+  }
+
+  if (!sections.length) return { text: "", grounded: false };
+  return {
+    text:
+      "GROUNDING — REAL DATA FROM BetaNYC's NYC-Budget MCP (use these actual awards, organizations, sponsors, and dollar amounts to justify your recommendations; do not contradict them):\n\n" +
+      sections.join("\n\n"),
+    grounded: true
+  };
 }
 
 // 1. Health Endpoint
@@ -374,12 +663,19 @@ app.post("/api/grant/match", async (req, res) => {
       return res.status(400).json({ error: "Organization Name and Mission statement are required." });
     }
 
-    // System instruction to guide the matching process
-    const systemInstruction = `You are an expert NYC Council and NYS Government Grant Writer and Budget Analyst. 
-Your goal is to analyze non-profit missions, matching them with accurate government funding channels, discretionary initiatives, and prequalification pathways in NYC (e.g., PASSPort) and NYS (e.g., SFS/Grants Gateway).
-Always speak objectively, with professional composure, using clear human labels and precise public sector terminology (Schedule C, OTPS, PS, Charities Registration, etc.).`;
+    // Pull real, matching FY2027 Schedule C awards from BetaNYC's MCP so the
+    // recommendations are grounded in the actual data source, not the model's memory.
+    const grounding = await buildRealDataGrounding({ orgName, mission, targetPopulation });
 
-    const userPrompt = `Analyze this non-profit and map them to potential NYC Council Discretionary funding channels, NYS grants, and prequalification steps:
+    // System instruction to guide the matching process
+    const systemInstruction = `You are an expert NYC Council and NYS Government Grant Writer and Budget Analyst.
+Your goal is to analyze non-profit missions, matching them with accurate government funding channels, discretionary initiatives, and prequalification pathways in NYC (e.g., PASSPort) and NYS (e.g., SFS/Grants Gateway).
+Always speak objectively, with professional composure, using clear human labels and precise public sector terminology (Schedule C, OTPS, PS, Charities Registration, etc.).
+${grounding.grounded
+  ? "You have been given REAL, current NYC Council Schedule C award records (below) retrieved live from BetaNYC's NYC-Budget dataset. Base your recommended budget lines, initiative names, and grant-range estimates on these actual awards. Prefer initiative names and dollar ranges that appear in the real data."
+  : "Base your analysis on well-known, real NYC Council Schedule C initiatives (e.g. CASA, NYC Cleanup, NORCs, Immigrant Legal Services)."}`;
+
+    const userPrompt = `${grounding.grounded ? grounding.text + "\n\n---\n\n" : ""}Analyze this non-profit and map them to potential NYC Council Discretionary funding channels, NYS grants, and prequalification steps:
     - Organization Name: "${orgName}"
     - Mission / Program Goals: "${mission}"
     - Target Population: "${targetPopulation || "General Public"}"
@@ -495,11 +791,17 @@ app.post("/api/grant/draft", async (req, res) => {
       return res.status(400).json({ error: "Required details: Organization, Mission, Target Agency, and Program Name." });
     }
 
-    const systemInstruction = `You are an expert NYC discretionary grant draft writer. 
-You write extremely professional, high-impact proposal drafts. 
-Avoid jargon-loaded AI phrases; instead, speak in clear, outcome-focused language with human-centric and realistic metrics.`;
+    // Ground the draft in real, comparable Schedule C awards for this org / focus area.
+    const grounding = await buildRealDataGrounding({ orgName, mission, targetPopulation: targetAudience });
 
-    const userPrompt = `Help write an official discretionary grant concept draft for:
+    const systemInstruction = `You are an expert NYC discretionary grant draft writer.
+You write extremely professional, high-impact proposal drafts.
+Avoid jargon-loaded AI phrases; instead, speak in clear, outcome-focused language with human-centric and realistic metrics.
+${grounding.grounded
+  ? "You have REAL NYC Council Schedule C award records (below) from BetaNYC's NYC-Budget dataset for comparable organizations and initiatives. Ground the statement of need and budget narrative in realistic amounts consistent with these actual awards."
+  : ""}`;
+
+    const userPrompt = `${grounding.grounded ? grounding.text + "\n\n---\n\n" : ""}Help write an official discretionary grant concept draft for:
     - Organization Name: "${orgName}"
     - Mission: "${mission}"
     - Selected Funding Agency/Pathway: "${selectedAgency}"
@@ -531,6 +833,65 @@ Avoid jargon-loaded AI phrases; instead, speak in clear, outcome-focused languag
   } catch (err: any) {
     console.error("Error in drafting proposal:", err);
     res.status(500).json({ error: "Failed to generate AI proposal draft.", details: err.message });
+  }
+});
+
+// 5. MCP diagnostic — verifies the BetaNYC NYC-Budget MCP subprocess can spawn
+// and answer. Open /api/health/mcp on the deployment to confirm live tool access.
+app.get("/api/health/mcp", async (req, res) => {
+  const status = await getMcpStatus();
+  res.json({
+    server: "@betanyc/nyc-budget-mcp",
+    source: "https://github.com/BetaNYC/New-York-City-Budget/tree/main/mcp",
+    ...status
+  });
+});
+
+// 6. Budget Agent — conversational agent that answers NYC budget questions by
+// calling BetaNYC's real MCP tools (Gemini primary, Claude fallback).
+app.post("/api/agent/chat", async (req, res) => {
+  try {
+    const { message, history } = req.body || {};
+    if (!message || typeof message !== "string" || !message.trim()) {
+      return res.status(400).json({ error: "A 'message' string is required." });
+    }
+
+    // Normalize + bound the prior turns, then append the new user message.
+    const priorTurns: Array<{ role: string; content: string }> = Array.isArray(history)
+      ? history
+          .filter(
+            (m: any) =>
+              m &&
+              (m.role === "user" || m.role === "assistant") &&
+              typeof m.content === "string" &&
+              m.content.trim()
+          )
+          .slice(-10)
+          .map((m: any) => ({ role: m.role, content: String(m.content).slice(0, 4000) }))
+      : [];
+
+    const conversation = [
+      ...priorTurns,
+      { role: "user", content: message.slice(0, 4000) }
+    ];
+
+    const { answer, provider, toolCalls } = await runBudgetAgent(conversation);
+    res.json({
+      answer,
+      provider,
+      toolCalls: toolCalls.map((t) => ({
+        name: t.name,
+        args: t.args,
+        // Trim tool output for the UI trace; full text already informed the model.
+        resultPreview: t.resultText.slice(0, 600)
+      }))
+    });
+  } catch (err: any) {
+    console.error("Error in Budget Agent chat:", err);
+    res.status(500).json({
+      error: "The Budget Agent could not complete your request.",
+      details: err?.message || String(err)
+    });
   }
 });
 

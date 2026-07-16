@@ -5,20 +5,22 @@ import {
   Sparkles, 
   Landmark, 
   ShieldCheck, 
-  Compass, 
-  FileText, 
+  Compass,
+  FileText,
   Info,
   ExternalLink,
   ChevronRight,
-  GitFork
+  GitFork,
+  Bot
 } from "lucide-react";
 import BudgetAnalytics from "./components/BudgetAnalytics";
 import GrantMatcher from "./components/GrantMatcher";
 import ProposalDrafter from "./components/ProposalDrafter";
 import PrequalificationQuiz from "./components/PrequalificationQuiz";
+import BudgetAgent from "./components/BudgetAgent";
 import { fetchApi } from "./lib/apiError";
 
-type TabType = "analytics" | "matcher" | "drafter" | "prequal";
+type TabType = "analytics" | "agent" | "matcher" | "drafter" | "prequal";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>("analytics");
@@ -133,6 +135,19 @@ export default function App() {
           >
             <FileSpreadsheet className="w-4 h-4 shrink-0" />
             <span className="font-serif italic font-semibold">Adopted Budget Analytics</span>
+          </button>
+
+          <button
+            id="tab-btn-agent"
+            onClick={() => setActiveTab("agent")}
+            className={`flex items-center gap-2 text-xs font-bold px-4 py-2.5 transition-all whitespace-nowrap cursor-pointer rounded-none border-2 ${
+              activeTab === "agent"
+                ? "bg-[#1A1A1A] text-white border-[#1A1A1A]"
+                : "bg-transparent border-transparent text-[#1A1A1A] hover:border-[#1A1A1A]"
+            }`}
+          >
+            <Bot className="w-4 h-4 shrink-0" />
+            <span className="font-serif italic font-semibold">Budget Agent</span>
           </button>
 
           <button
@@ -251,6 +266,7 @@ export default function App() {
             id="viewport-motion-wrapper"
           >
             {activeTab === "analytics" && <BudgetAnalytics />}
+            {activeTab === "agent" && <BudgetAgent />}
             {activeTab === "matcher" && <GrantMatcher onSelectAgencyForDraft={handleSelectAgencyForDraft} />}
             {activeTab === "drafter" && (
               <ProposalDrafter 
@@ -273,7 +289,7 @@ export default function App() {
               NYC.gov/Budget • Data Ref: BetaNYC-NYC-Budget-Repo
             </p>
             <p className="text-[9px] text-[#A3A3A3] normal-case tracking-normal max-w-2xl leading-relaxed" id="footer-data-attribution">
-              Built using machine-readable, reconciled NYC adopted-budget files (Schedule C) provided by <a href="https://beta.nyc" target="_blank" rel="noopener noreferrer" className="underline hover:text-white font-medium">BetaNYC</a>. All AI proposal content and agency alignment assessments are generated server-side using Google Gemini Flash.
+              Built using machine-readable, reconciled NYC adopted-budget files (Schedule C) provided by <a href="https://beta.nyc" target="_blank" rel="noopener noreferrer" className="underline hover:text-white font-medium">BetaNYC</a>. The Budget Agent, Grant Matcher, and Drafting Assistant are grounded in real award records queried live through BetaNYC's <a href="https://github.com/BetaNYC/New-York-City-Budget/tree/main/mcp" target="_blank" rel="noopener noreferrer" className="underline hover:text-white font-medium">NYC-Budget MCP</a> server, generated server-side using Google Gemini Flash (Anthropic Claude fallback).
             </p>
           </div>
           <div className="flex flex-wrap justify-center gap-6 text-[#A3A3A3] font-mono">

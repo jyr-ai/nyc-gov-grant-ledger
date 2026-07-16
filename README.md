@@ -68,3 +68,27 @@ npm run build
 ```
 
 The compiled assets will be bundled into the `/dist` directory. All TypeScript type configurations are validated strictly via the linter (`npm run lint`).
+
+---
+
+## 🤖 Live AI Agent — BetaNYC NYC-Budget MCP
+
+The **Budget Agent** tab and the server-side grounding for the **Grant Matcher** and **Drafting Assistant** are powered by BetaNYC's official [`@betanyc/nyc-budget-mcp`](https://github.com/BetaNYC/New-York-City-Budget/tree/main/mcp) Model Context Protocol server. Rather than relying on the model's memory, the app spawns this MCP server as a stdio subprocess (`mcpClient.ts`) and lets the LLM call its 7 real, data-backed tools:
+
+| Tool | Purpose |
+|---|---|
+| `search_awards` | Schedule C awards by EIN / org / program / member / year / category / initiative (FY2015–FY2027) |
+| `get_awards_by_ein` | Every award for an EIN across all years, with per-year totals |
+| `search_capital_projects` | §254 capital by agency / year / sponsor / title |
+| `search_transparency_resolutions` | Post-adoption designations, rescissions, purpose changes |
+| `get_terms_conditions` | Reporting mandates by year / agency |
+| `get_legistar_link` | Legistar matter / URL / adoption date for a source document |
+| `list_available_fiscal_years` | Exact per-dataset coverage (the parse-gap honesty guard) |
+
+The MCP ships a prebuilt SQLite index built directly from the same BetaNYC CSVs the analytics dashboard traces to, so **every figure the agent reports is grounded in the source data.**
+
+- **Budget Agent** (`/api/agent/chat`) runs an agentic tool-use loop — Google Gemini (primary) or Anthropic Claude (fallback) — and returns the answer plus the exact tool calls it made (visible under "MCP data lookups" in the UI).
+- **Grant Matcher** (`/api/grant/match`) and **Drafting Assistant** (`/api/grant/draft`) pre-fetch real, matching FY2027 awards for the organization's focus area and inject them into the prompt before generating recommendations.
+- **Diagnostics:** open **`/api/health/mcp`** on the deployment to confirm the MCP subprocess spawns and lists its tools live.
+
+> **Deployment note:** the MCP runs as a Node subprocess with a native `better-sqlite3` binary, so the API must run on Vercel's Node.js runtime (not Edge). `vercel.json` uses `includeFiles` to bundle the MCP package and its native dependency into the serverless function. No extra API key is required for the MCP itself; the LLM keys (`GEMINI_API_KEY` / `ANTHROPIC_API_KEY`) drive the agent.
