@@ -39,6 +39,18 @@ saved.
 - `index.json` — one row per fiscal year with the headline figures
   (`grandTotalPrinted`, `awardRows`, `awardDollarTotal`, `initiativesRowCount`)
   for quick cross-referencing without opening all 19 files.
+- `sector-category-mapping.json` — **not sourced from BetaNYC.** The reconciliation
+  files only report dollars per named category (e.g. `CRIMINAL JUSTICE SERVICES`,
+  `CULTURAL ORGANIZATIONS`) — there is no "sector" concept in the source at all.
+  This file is our own editorial classification, grouping every real category
+  name used across all 19 years (including every rename/typo BetaNYC's own
+  filings used, e.g. `CULTURAL ORGANZIATIONS` vs `CULTURAL ORGANIZATIONS`) into
+  one of 5 buckets (`socialServices`, `youthEducation`, `artsCulture`,
+  `healthWellness`, `environmentPublicSpace`) so the Historical Timeline chart's
+  "Nonprofit Sectors" view has something to plot. The dollar amounts that feed
+  each bucket are 100% real (each category's `printed` value); only the
+  grouping label is ours. For every year, the 5 bucket sums add up exactly to
+  that year's real Grand Total — see `verification` in the file itself.
 
 ## Important caveat: award-count coverage varies by year
 

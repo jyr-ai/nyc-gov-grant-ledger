@@ -615,7 +615,7 @@ export default function BudgetAnalytics() {
                   margin={{ top: 15, right: 20, left: 15, bottom: 10 }}
                 >
                   <CartesianGrid strokeDasharray="2 2" vertical={false} stroke="#D9D7CE" />
-                  <XAxis dataKey="year" stroke="#1A1A1A" fontSize={11} tickLine={true} />
+                  <XAxis dataKey="year" stroke="#1A1A1A" fontSize={9} tickLine={true} interval={0} />
                   <YAxis
                     yAxisId="left"
                     stroke="#003B71"
@@ -670,7 +670,7 @@ export default function BudgetAnalytics() {
                   margin={{ top: 15, right: 20, left: 15, bottom: 10 }}
                 >
                   <CartesianGrid strokeDasharray="2 2" vertical={false} stroke="#D9D7CE" />
-                  <XAxis dataKey="year" stroke="#1A1A1A" fontSize={11} tickLine={true} />
+                  <XAxis dataKey="year" stroke="#1A1A1A" fontSize={9} tickLine={true} interval={0} />
                   <YAxis
                     stroke="#003B71"
                     fontSize={11}

@@ -298,9 +298,13 @@ export const BUDGET_INITIATIVES: BudgetInitiative[] = [
 // card. Award-level dollar coverage (the sum of individually-attributed awards) is well below 100% of
 // totalFunds in most years — see the README in data/schedule-c-reconciliation/ for the coverage caveat.
 // Sector splits (socialServices/youthEducation/artsCulture/healthWellness/environmentPublicSpace) are
-// a full, 100%-reconciled partition of every year's real category table into 5 buckets — every
-// category name across all 19 years (including legacy names like "Senior Services" or "Youth and
-// Community Development") is mapped to exactly one bucket; see BetaNYC/New-York-City-Budget analysis.
+// NOT a field BetaNYC publishes — the source only reports dollars per named category (e.g. "Criminal
+// Justice Services", "Cultural Organizations"). This 5-bucket grouping is our own editorial
+// classification for charting purposes; the full category->bucket mapping (every category name and
+// naming variant/typo used across all 19 years) is committed and documented at
+// data/schedule-c-reconciliation/sector-category-mapping.json. Every dollar figure that feeds a bucket
+// is real (each category's `printed` value); only the grouping label is ours. Verified: for every
+// year FY2009-FY2027, the 5 bucket sums add up exactly to that year's real Grand Total.
 export const HISTORICAL_TREND_DATA: HistoricalTrend[] = [
   { year: "FY2009", totalFunds: 363383804, socialServices: 66729055, youthEducation: 206270000, artsCulture: 21800000, healthWellness: 67584749, environmentPublicSpace: 1000000 },
   { year: "FY2010", totalFunds: 313771129, socialServices: 81721129, youthEducation: 91197000, artsCulture: 71898000, healthWellness: 67955000, environmentPublicSpace: 1000000 },
