@@ -10,8 +10,7 @@ import {
   Info,
   ExternalLink,
   ChevronRight,
-  GitFork,
-  Bot
+  GitFork
 } from "lucide-react";
 import BudgetAnalytics from "./components/BudgetAnalytics";
 import GrantMatcher from "./components/GrantMatcher";
@@ -20,7 +19,7 @@ import PrequalificationQuiz from "./components/PrequalificationQuiz";
 import BudgetAgent from "./components/BudgetAgent";
 import { fetchApi } from "./lib/apiError";
 
-type TabType = "analytics" | "agent" | "matcher" | "drafter" | "prequal";
+type TabType = "analytics" | "matcher" | "drafter" | "prequal";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>("analytics");
@@ -135,19 +134,6 @@ export default function App() {
           >
             <FileSpreadsheet className="w-4 h-4 shrink-0" />
             <span className="font-serif italic font-semibold">Adopted Budget Analytics</span>
-          </button>
-
-          <button
-            id="tab-btn-agent"
-            onClick={() => setActiveTab("agent")}
-            className={`flex items-center gap-2 text-xs font-bold px-4 py-2.5 transition-all whitespace-nowrap cursor-pointer rounded-none border-2 ${
-              activeTab === "agent"
-                ? "bg-[#1A1A1A] text-white border-[#1A1A1A]"
-                : "bg-transparent border-transparent text-[#1A1A1A] hover:border-[#1A1A1A]"
-            }`}
-          >
-            <Bot className="w-4 h-4 shrink-0" />
-            <span className="font-serif italic font-semibold">Budget Agent</span>
           </button>
 
           <button
@@ -266,7 +252,6 @@ export default function App() {
             id="viewport-motion-wrapper"
           >
             {activeTab === "analytics" && <BudgetAnalytics />}
-            {activeTab === "agent" && <BudgetAgent />}
             {activeTab === "matcher" && <GrantMatcher onSelectAgencyForDraft={handleSelectAgencyForDraft} />}
             {activeTab === "drafter" && (
               <ProposalDrafter 
@@ -299,6 +284,9 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {/* Floating conversational Budget Agent — available on every tab */}
+      <BudgetAgent />
 
     </div>
   );
