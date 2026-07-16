@@ -74,7 +74,7 @@ export default function App() {
             THE CITY LEDGER
           </h1>
           <p className="text-[10px] uppercase tracking-[0.18em] font-bold mt-1 text-[#555] leading-relaxed">
-            NYC Government Spending & Grant Analysis • Vol. 26
+            NYC Government Spending & Grant Analysis
           </p>
         </div>
 
@@ -97,8 +97,8 @@ export default function App() {
           {/* Budget stats and source code button */}
           <div className="flex flex-col sm:flex-row items-start sm:items-end gap-6 w-full md:w-auto md:text-right mt-1">
             <div className="md:text-right">
-              <div className="text-3xl sm:text-4xl font-serif font-black italic text-[#003B71]">$112.4B</div>
-              <div className="text-[9px] uppercase tracking-widest font-bold text-[#666]">FY25/FY26 Adopted Operating Budget</div>
+              <div className="text-3xl sm:text-4xl font-serif font-black italic text-[#003B71]">$665 Million</div>
+              <div className="text-[9px] uppercase tracking-widest font-bold text-[#666]">FY26 Grand Total Budget</div>
             </div>
             
             <div className="shrink-0">

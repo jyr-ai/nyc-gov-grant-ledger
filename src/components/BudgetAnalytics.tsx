@@ -855,7 +855,7 @@ export default function BudgetAnalytics() {
         <div className="bg-[#F9F8F3] p-6 rounded-none border border-[#1A1A1A] lg:col-span-4 flex flex-col justify-between" id="trending-topics-card">
           <div>
             <div className="mb-4 border-b border-[#1A1A1A] pb-4">
-              <span className="text-[9px] font-mono font-bold bg-[#F27D26] text-white px-2 py-0.5 uppercase tracking-widest block w-fit mb-2">BetaNYC Analysis</span>
+              <span className="text-[9px] font-mono font-bold bg-[#F27D26] text-white px-2 py-0.5 uppercase tracking-widest block w-fit mb-2">Topic Analysis</span>
               <h3 className="text-xl font-serif font-bold text-[#1A1A1A]" id="trending-topics-title">Trending Topics</h3>
             </div>
             
@@ -907,7 +907,7 @@ export default function BudgetAnalytics() {
               <User className="w-4 h-4 shrink-0 mt-0.5" />
               <div className="space-y-0.5">
                 <span className="font-serif font-bold block">1. Council Member FY2027 Rollup</span>
-                <span className="text-[10px] opacity-80 block">Which organizations did CM [name] fund in FY2027, and how much did they receive?</span>
+                <span className="text-[10px] opacity-80 block">Which organizations did Council Member fund in FY2027, and how much did they receive?</span>
               </div>
             </button>
 
