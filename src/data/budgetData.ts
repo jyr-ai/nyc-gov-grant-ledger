@@ -16,8 +16,9 @@
 //   "early-era" filings with category-level totals only — no award count or agency breakdown exists
 //   for those years, so those fields are left undefined rather than estimated.
 // - In every year's awards.csv, a large share of dollars carries no "agency" tag at all (recorded
-//   directly against a category/initiative rather than a specific city agency) — this is preserved
-//   honestly below as an "Unattributed" pool rather than force-assigned to an agency.
+//   directly against a category/initiative rather than a specific city agency). AGENCY_BUDGET_DATA
+//   (the Agency Ledger panel) intentionally excludes this untagged pool rather than showing it as its
+//   own "Unattributed" row — see the comment above that array for the excluded dollar amount.
 // - The Schedule C dataset has no borough field for discretionary awards. The one real per-borough
 //   breakdown available in this repo is the FY27 capital budget file, which is used for the
 //   "Capital Budget by Borough" panel — a different budget instrument than Schedule C, labeled as such.
@@ -105,9 +106,11 @@ export const NYC_BUDGET_OVERVIEW = {
 };
 
 // Real FY27 agency breakdown, computed directly from fy27_schedule_c_awards.csv (group by `agency`).
-// "Unattributed" is not a gap in this dataset — it is the largest single slice ($438.2M / 1,744 rows):
-// dollars recorded against a category/initiative in the source CSV with no specific city-agency tag.
-// Shown honestly as its own entry rather than folded into a named agency.
+// By design, this array only includes rows that carry a specific city-agency tag in the source CSV —
+// it deliberately excludes the $438,239,865 / 1,744 rows recorded against a category/initiative with
+// no agency tag at all (this pool included most of the Speaker's Initiative and other multi-agency
+// programs). That means AGENCY_BUDGET_DATA does NOT sum to the FY27 Grand Total or even to the full
+// awards.csv total ($605,111,412) — it only covers the $166,871,547 that is agency-attributable.
 export const AGENCY_BUDGET_DATA: AgencyBudget[] = [
   {
     id: "DYCD",
@@ -207,17 +210,6 @@ export const AGENCY_BUDGET_DATA: AgencyBudget[] = [
     color: "#C84B31",
     description: "Roll-up of every other agency-tagged FY27 award (each individually under $6M), including DCWP, DSNY, DOE, CUNY, HPD-adjacent clerks, DHS, NYPD, FDNY, ACS, NYPL, DOT, QBPL, and borough-president offices.",
     keyInitiatives: ["CUNY Public Service Training Corps", "Community Composting (DSNY)", "Support for Arts Instruction (DOE)"]
-  },
-  {
-    id: "UNATTRIBUTED",
-    name: "Unattributed",
-    fullName: "Citywide Initiative Pool (no agency tag in source data)",
-    totalFunds: 438239865,
-    allocationsCount: 1744,
-    averageAward: Math.round(438239865 / 1744),
-    color: "#546A7B",
-    description: "The largest slice of FY27 Schedule C dollars — recorded against a funding category or named initiative in BetaNYC's award-level data, but without a specific city-agency tag. Includes most of the Speaker's Initiative and many multi-agency programs (e.g. \"A Greener NYC\", \"NYC Cleanup\") that span several agencies at once.",
-    keyInitiatives: ["Speaker's Initiative to Address Citywide Needs", "New York Immigrant Family Unity Project", "Alternatives to Incarceration and Reentry Programs"]
   }
 ];
 
