@@ -634,7 +634,8 @@ export default function BudgetAnalytics() {
                   <Tooltip
                     formatter={(value: any, name: string) => {
                       if (name === "totalFunds") return [formatCurrency(Number(value)), "Total Funds"];
-                      if (name === "grantsCount") return [Number(value).toLocaleString(), "Awards Count"];
+                      if (name === "grantsCount") return [Number(value).toLocaleString(), "Awards Count (EIN-level, FY15+)"];
+                      if (name === "initiativeLineItems") return [Number(value).toLocaleString(), "Initiative Line Items (FY09-14, not award-level)"];
                       return [value, name];
                     }}
                     contentStyle={{ backgroundColor: "#F9F8F3", border: "2px solid #1A1A1A", borderRadius: "0px" }}
@@ -660,6 +661,17 @@ export default function BudgetAnalytics() {
                     stroke="#F27D26"
                     strokeWidth={2}
                     dot={{ r: 3, stroke: "#F27D26", strokeWidth: 1 }}
+                  />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="initiativeLineItems"
+                    name="Initiative Line Items (FY09-14, not award-level)"
+                    stroke="#8F8D83"
+                    strokeWidth={2}
+                    strokeDasharray="4 3"
+                    dot={{ r: 3, stroke: "#8F8D83", strokeWidth: 1 }}
+                    connectNulls={false}
                   />
                 </LineChart>
               </ResponsiveContainer>

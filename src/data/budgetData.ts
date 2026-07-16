@@ -63,6 +63,11 @@ export interface HistoricalTrend {
   totalFunds: number;
   grantsCount?: number;
   avgGrant?: number;
+  // Real, sourced ("initiatives rows: N") for FY2009-FY2014 only - counts named initiative/program
+  // line items, NOT individual awards to organizations (those years have no award/EIN-level table at
+  // all - see data/schedule-c-reconciliation/README.md). Deliberately a separate field from
+  // `grantsCount` so the two are never plotted as the same metric.
+  initiativeLineItems?: number;
   socialServices: number;
   youthEducation: number;
   artsCulture: number;
@@ -291,9 +296,13 @@ export const BUDGET_INITIATIVES: BudgetInitiative[] = [
 // `totalFunds` is the GRAND TOTAL (printed/adopted column) for every year — 100% real, 100% of the time.
 // `grantsCount` is the real, sourced "awards: N rows" count from each year's reconciliation file, and is
 // populated for FY2015-FY2027 (every year that has an award/EIN-level breakdown at all). FY2009-FY2014
-// ("early-era" filings) are the only years left undefined: those source PDFs reconcile at the
-// initiative-line level only (see `initiativesRowCount` in the JSON files) and never emitted an
-// award-level table, so there is no real per-grant count to report for those six years.
+// ("early-era" filings) are left undefined for `grantsCount` specifically: those source PDFs reconcile
+// at the initiative-line level only and never emitted an award/EIN-level table, so there is no real
+// per-organization grant count to report for those six years. What IS real and sourced for those six
+// years is `initiativeLineItems` ("initiatives rows: N" in the source) - the count of named
+// initiative/program lines, a coarser unit than an individual award (see FY2019 for scale: 28
+// *categories* but 846 *awards* - initiatives sit between those two granularities). Plotted as a
+// separate series from `grantsCount` so the two are never implied to be the same metric.
 // `avgGrant` = totalFunds / grantsCount, matching the convention already used for the FY2027 ledger
 // card. Award-level dollar coverage (the sum of individually-attributed awards) is well below 100% of
 // totalFunds in most years — see the README in data/schedule-c-reconciliation/ for the coverage caveat.
@@ -317,12 +326,12 @@ export const BUDGET_INITIATIVES: BudgetInitiative[] = [
 // methodology: data/schedule-c-reconciliation/speaker-initiative-analysis.json.
 // Verified: for every year FY2009-FY2027, the 5 bucket sums still add up exactly to the real Grand Total.
 export const HISTORICAL_TREND_DATA: HistoricalTrend[] = [
-  { year: "FY2009", totalFunds: 363383804, socialServices: 66729055, youthEducation: 206270000, artsCulture: 21800000, healthWellness: 67584749, environmentPublicSpace: 1000000 },
-  { year: "FY2010", totalFunds: 313771129, socialServices: 81721129, youthEducation: 91197000, artsCulture: 71898000, healthWellness: 67955000, environmentPublicSpace: 1000000 },
-  { year: "FY2011", totalFunds: 317676672, socialServices: 131759422, youthEducation: 82245000, artsCulture: 66827000, healthWellness: 29024750, environmentPublicSpace: 7820500 },
-  { year: "FY2012", totalFunds: 276092050, socialServices: 118211760, youthEducation: 47520000, artsCulture: 96348790, healthWellness: 6191000, environmentPublicSpace: 7820500 },
-  { year: "FY2013", totalFunds: 312874891, socialServices: 140834154, youthEducation: 94438237, artsCulture: 33800000, healthWellness: 24582500, environmentPublicSpace: 19220000 },
-  { year: "FY2014", totalFunds: 304793605, socialServices: 156147004, youthEducation: 85325000, artsCulture: 28749000, healthWellness: 30135601, environmentPublicSpace: 4437000 },
+  { year: "FY2009", totalFunds: 363383804, initiativeLineItems: 123, socialServices: 66729055, youthEducation: 206270000, artsCulture: 21800000, healthWellness: 67584749, environmentPublicSpace: 1000000 },
+  { year: "FY2010", totalFunds: 313771129, initiativeLineItems: 124, socialServices: 81721129, youthEducation: 91197000, artsCulture: 71898000, healthWellness: 67955000, environmentPublicSpace: 1000000 },
+  { year: "FY2011", totalFunds: 317676672, initiativeLineItems: 110, socialServices: 131759422, youthEducation: 82245000, artsCulture: 66827000, healthWellness: 29024750, environmentPublicSpace: 7820500 },
+  { year: "FY2012", totalFunds: 276092050, initiativeLineItems: 97, socialServices: 118211760, youthEducation: 47520000, artsCulture: 96348790, healthWellness: 6191000, environmentPublicSpace: 7820500 },
+  { year: "FY2013", totalFunds: 312874891, initiativeLineItems: 121, socialServices: 140834154, youthEducation: 94438237, artsCulture: 33800000, healthWellness: 24582500, environmentPublicSpace: 19220000 },
+  { year: "FY2014", totalFunds: 304793605, initiativeLineItems: 123, socialServices: 156147004, youthEducation: 85325000, artsCulture: 28749000, healthWellness: 30135601, environmentPublicSpace: 4437000 },
   { year: "FY2015", totalFunds: 233438000, grantsCount: 652, avgGrant: 358034, socialServices: 87460000, youthEducation: 102683000, artsCulture: 14600000, healthWellness: 13295000, environmentPublicSpace: 15400000 },
   { year: "FY2016", totalFunds: 333886574, grantsCount: 335, avgGrant: 996676, socialServices: 232953919, youthEducation: 17052000, artsCulture: 18821000, healthWellness: 48131855, environmentPublicSpace: 16927800 },
   { year: "FY2017", totalFunds: 279908300, grantsCount: 364, avgGrant: 768979, socialServices: 180699881, youthEducation: 33096000, artsCulture: 27314500, healthWellness: 17107334, environmentPublicSpace: 21690585 },
