@@ -1,0 +1,129 @@
+{
+  "fiscalYear": "FY2011",
+  "sourceFile": "fy2011-C2011.pdf",
+  "sourcePages": 291,
+  "parserEra": "early-era",
+  "categories": [
+    {
+      "category": "MOCS.",
+      "initiatives": 37438000,
+      "printed": 37438000,
+      "status": "OK"
+    },
+    {
+      "category": "CULTURAL ORGANZIATIONS",
+      "initiatives": 30713000,
+      "printed": 30713000,
+      "status": "OK"
+    },
+    {
+      "category": "DOMESTIC VIOLENCE",
+      "initiatives": 3595000,
+      "printed": 3595000,
+      "status": "OK"
+    },
+    {
+      "category": "EDUCATION",
+      "initiatives": 21205000,
+      "printed": 20955000,
+      "status": "DIFF +250,000"
+    },
+    {
+      "category": "ELECTED OFFICIALS",
+      "initiatives": 9835133,
+      "printed": 9835133,
+      "status": "OK"
+    },
+    {
+      "category": "FIRE AND CRIMINAL JUSTICE SERVICES",
+      "initiatives": 41786289,
+      "printed": 41786289,
+      "status": "OK"
+    },
+    {
+      "category": "HEALTH SERVICES AND PREVENTION",
+      "initiatives": 20092600,
+      "printed": 20092600,
+      "status": "OK"
+    },
+    {
+      "category": "HIGHER EDUCATION",
+      "initiatives": 30900000,
+      "printed": 30900000,
+      "status": "OK"
+    },
+    {
+      "category": "HOMELESS SERVICES",
+      "initiatives": 1850000,
+      "printed": 1850000,
+      "status": "OK"
+    },
+    {
+      "category": "HOUSING",
+      "initiatives": 5315000,
+      "printed": 5315000,
+      "status": "OK"
+    },
+    {
+      "category": "IMMIGRANT SERVICES",
+      "initiatives": 4500000,
+      "printed": 4500000,
+      "status": "OK"
+    },
+    {
+      "category": "JOB DEVELOPMENT",
+      "initiatives": 5250000,
+      "printed": 5250000,
+      "status": "OK"
+    },
+    {
+      "category": "LEGAL SERVICES",
+      "initiatives": 11185000,
+      "printed": 11185000,
+      "status": "OK"
+    },
+    {
+      "category": "LIBRARIES",
+      "initiatives": 36114000,
+      "printed": 36114000,
+      "status": "OK"
+    },
+    {
+      "category": "MENTAL HEALTH SERVICES",
+      "initiatives": 7132150,
+      "printed": 7132150,
+      "status": "OK"
+    },
+    {
+      "category": "PARKS AND RECREATION",
+      "initiatives": 7820500,
+      "printed": 7820500,
+      "status": "OK"
+    },
+    {
+      "category": "SENIOR SERVICES",
+      "initiatives": 1800000,
+      "printed": 1800000,
+      "status": "OK"
+    },
+    {
+      "category": "SOCIAL SERVICES",
+      "initiatives": 11005000,
+      "printed": 11005000,
+      "status": "OK"
+    },
+    {
+      "category": "YOUTH AND COMMUNITY DEVELOPMENT",
+      "initiatives": 30390000,
+      "printed": 30390000,
+      "status": "OK"
+    }
+  ],
+  "grandTotal": {
+    "initiatives": 317926672,
+    "printed": 317676672
+  },
+  "reconciliationStatus": "18/19 categories exact",
+  "awardLevel": null,
+  "initiativesRowCount": 110
+}

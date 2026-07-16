@@ -1,0 +1,194 @@
+{
+  "fiscalYear": "FY2024",
+  "sourceFile": "Fiscal-2024-Schedule-C-Merge-Final.pdf",
+  "sourcePages": 453,
+  "parserEra": "modern",
+  "categories": [
+    {
+      "category": "ANTI-POVERTY",
+      "initiatives": 2800000,
+      "printed": 2800000,
+      "status": "OK"
+    },
+    {
+      "category": "BOROUGHWIDE NEEDS",
+      "initiatives": 2000000,
+      "printed": 2000000,
+      "status": "OK"
+    },
+    {
+      "category": "COMMUNITY DEVELOPMENT",
+      "initiatives": 28180625,
+      "printed": 28180625,
+      "status": "OK"
+    },
+    {
+      "category": "COMMUNITY SAFETY AND VICTIM SERVICES",
+      "initiatives": 5100000,
+      "printed": 5100000,
+      "status": "OK"
+    },
+    {
+      "category": "CRIMINAL JUSTICE SERVICES",
+      "initiatives": 28711645,
+      "printed": 28658710,
+      "status": "DIFF +52,935"
+    },
+    {
+      "category": "CULTURAL ORGANIZATIONS",
+      "initiatives": 34350000,
+      "printed": 34350000,
+      "status": "OK"
+    },
+    {
+      "category": "DOMESTIC VIOLENCE SERVICES",
+      "initiatives": 14460000,
+      "printed": 14460000,
+      "status": "OK"
+    },
+    {
+      "category": "EDUCATION",
+      "initiatives": 37724300,
+      "printed": 37724300,
+      "status": "OK"
+    },
+    {
+      "category": "ENVIRONMENTAL INITIATIVES",
+      "initiatives": 19380000,
+      "printed": 19380000,
+      "status": "OK"
+    },
+    {
+      "category": "FOOD INITIATIVES",
+      "initiatives": 10893750,
+      "printed": 10893750,
+      "status": "OK"
+    },
+    {
+      "category": "HEALTH SERVICES",
+      "initiatives": 24702679,
+      "printed": 24702679,
+      "status": "OK"
+    },
+    {
+      "category": "HIGHER EDUCATION INITIATIVES",
+      "initiatives": 24011869,
+      "printed": 24011869,
+      "status": "OK"
+    },
+    {
+      "category": "HOMELESS SERVICES",
+      "initiatives": 2170000,
+      "printed": 2170000,
+      "status": "OK"
+    },
+    {
+      "category": "HOUSING",
+      "initiatives": 16201000,
+      "printed": 16201000,
+      "status": "OK"
+    },
+    {
+      "category": "IMMIGRANT SERVICES",
+      "initiatives": 30837141,
+      "printed": 30837141,
+      "status": "OK"
+    },
+    {
+      "category": "LEGAL SERVICES",
+      "initiatives": 15913000,
+      "printed": 15913000,
+      "status": "OK"
+    },
+    {
+      "category": "LIBRARIES",
+      "initiatives": 15700000,
+      "printed": 15700000,
+      "status": "OK"
+    },
+    {
+      "category": "MENTAL HEALTH SERVICES",
+      "initiatives": 24492110,
+      "printed": 24492110,
+      "status": "OK"
+    },
+    {
+      "category": "OLDER ADULT SERVICES (FORMERLY SENIOR SERVICES)",
+      "initiatives": 28990324,
+      "printed": 28990324,
+      "status": "OK"
+    },
+    {
+      "category": "PARKS AND RECREATION SERVICES",
+      "initiatives": 5840600,
+      "printed": 5840600,
+      "status": "OK"
+    },
+    {
+      "category": "PUBLIC SAFETY",
+      "initiatives": 26961475,
+      "printed": 26961475,
+      "status": "OK"
+    },
+    {
+      "category": "SMALL BUSINESS SERVICES AND WORKFORCE DEVELOPMENT",
+      "initiatives": 47822020,
+      "printed": 47822020,
+      "status": "OK"
+    },
+    {
+      "category": "SPEAKER’S INITIATIVE TO ADDRESS CITYWIDE NEEDS",
+      "initiatives": 2830000,
+      "printed": 2830000,
+      "status": "OK"
+    },
+    {
+      "category": "VETERAN SERVICES",
+      "initiatives": 5828914,
+      "printed": 5828914,
+      "status": "OK"
+    },
+    {
+      "category": "YOUNG WOMEN’S INITIATIVE",
+      "initiatives": 16027048,
+      "printed": 16027048,
+      "status": "OK"
+    },
+    {
+      "category": "YOUTH SERVICES",
+      "initiatives": 0,
+      "printed": 0,
+      "status": "DIFF +0"
+    }
+  ],
+  "grandTotal": {
+    "initiatives": 471928500,
+    "printed": 471875565
+  },
+  "reconciliationStatus": "24/26 categories exact",
+  "awardLevel": {
+    "rows": 5368,
+    "dollarTotal": 400663574,
+    "memberItems": {
+      "rows": 3564,
+      "dollarTotal": 99722369
+    },
+    "initiativeProviders": {
+      "rows": 1804,
+      "dollarTotal": 300941205
+    },
+    "appendixAAging": {
+      "rows": 477,
+      "dollarTotal": 5610000
+    },
+    "appendixBLocal": {
+      "rows": 2616,
+      "dollarTotal": 36539000
+    },
+    "appendixCYouth": {
+      "rows": 818,
+      "dollarTotal": 7650000
+    }
+  },
+  "initiativesRowCount": null
+}

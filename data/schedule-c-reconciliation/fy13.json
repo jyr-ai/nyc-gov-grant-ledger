@@ -1,0 +1,117 @@
+{
+  "fiscalYear": "FY2013",
+  "sourceFile": "fy2013-FY-2013-Schedule-C-Merge-Final1.pdf",
+  "sourcePages": 258,
+  "parserEra": "early-era",
+  "categories": [
+    {
+      "category": "ANTI-GUN VIOLENCE INITIATIVE",
+      "initiatives": 66168000,
+      "printed": 66168000,
+      "status": "OK"
+    },
+    {
+      "category": "CIVIL LEGAL SERVICES",
+      "initiatives": 4035000,
+      "printed": 4035000,
+      "status": "OK"
+    },
+    {
+      "category": "CIVILIAN COMPLAINT REVIEW BOARD",
+      "initiatives": 1499254,
+      "printed": 1499254,
+      "status": "OK"
+    },
+    {
+      "category": "CRIMINAL JUSTICE SERVICES",
+      "initiatives": 4900000,
+      "printed": 4900000,
+      "status": "OK"
+    },
+    {
+      "category": "CULTURAL ORGANZIATIONS",
+      "initiatives": 11800000,
+      "printed": 11800000,
+      "status": "OK"
+    },
+    {
+      "category": "DOMESTIC VIOLENCE",
+      "initiatives": 3625000,
+      "printed": 3625000,
+      "status": "OK"
+    },
+    {
+      "category": "EDUCATION",
+      "initiatives": 17950000,
+      "printed": 17950000,
+      "status": "OK"
+    },
+    {
+      "category": "FIRE SERVICES",
+      "initiatives": 43582294,
+      "printed": 43582294,
+      "status": "OK"
+    },
+    {
+      "category": "GOVERNMENT OFFICIALS",
+      "initiatives": 483606,
+      "printed": 483606,
+      "status": "OK"
+    },
+    {
+      "category": "HIGHER EDUCATION",
+      "initiatives": 1046137,
+      "printed": 1046137,
+      "status": "OK"
+    },
+    {
+      "category": "HOMELESS SERVICES",
+      "initiatives": 250000,
+      "printed": 250000,
+      "status": "OK"
+    },
+    {
+      "category": "HOUSING",
+      "initiatives": 5194000,
+      "printed": 5194000,
+      "status": "OK"
+    },
+    {
+      "category": "LIBRARIES",
+      "initiatives": 22000000,
+      "printed": 22000000,
+      "status": "OK"
+    },
+    {
+      "category": "PARKS AND RECREATION",
+      "initiatives": 19220000,
+      "printed": 19220000,
+      "status": "OK"
+    },
+    {
+      "category": "SENIOR SERVICES",
+      "initiatives": 24582500,
+      "printed": 24582500,
+      "status": "OK"
+    },
+    {
+      "category": "SOCIAL SERVICES",
+      "initiatives": 11097000,
+      "printed": 11097000,
+      "status": "OK"
+    },
+    {
+      "category": "YOUTH AND COMMUNITY DEVELOPMENT",
+      "initiatives": 75442100,
+      "printed": 75442100,
+      "status": "OK"
+    }
+  ],
+  "grandTotal": {
+    "initiatives": 312874891,
+    "printed": 312874891
+  },
+  "reconciliationStatus": "17/17 categories exact",
+  "awardLevel": null,
+  "initiativesRowCount": 121
+}
