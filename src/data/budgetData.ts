@@ -303,8 +303,19 @@ export const BUDGET_INITIATIVES: BudgetInitiative[] = [
 // classification for charting purposes; the full category->bucket mapping (every category name and
 // naming variant/typo used across all 19 years) is committed and documented at
 // data/schedule-c-reconciliation/sector-category-mapping.json. Every dollar figure that feeds a bucket
-// is real (each category's `printed` value); only the grouping label is ours. Verified: for every
-// year FY2009-FY2027, the 5 bucket sums add up exactly to that year's real Grand Total.
+// is real (each category's `printed` value); only the grouping label is ours.
+//
+// SPECIAL CASE — "Speaker's Initiative to Address Citywide Needs": this reconciliation category is a
+// content-free catch-all (its name carries no service meaning), and in FY27 alone it is $86.5M / 13.2%
+// of the entire budget. Rather than dump it all into one bucket, its dollars are split across the 5
+// sectors by each underlying award's *administering agency* (DYCD/DOE/CUNY/ACS->youth, DCLA/libraries->
+// arts, DHMH/DFTA->health, DPR/DSNY/DOT->environment, everything else->social), using the award-level
+// proportions in BetaNYC's combined/all_years_awards.csv applied to the reconciliation Speaker amount.
+// This is done for FY2020-FY2027 (the years with award-level agency data). For FY2016-FY2019 the Speaker
+// category exists but predates award-level tagging, so those dollars stay in socialServices and are NOT
+// deciphered (materially inflating FY17/FY18 social — flagged in the analysis file). Full breakdown and
+// methodology: data/schedule-c-reconciliation/speaker-initiative-analysis.json.
+// Verified: for every year FY2009-FY2027, the 5 bucket sums still add up exactly to the real Grand Total.
 export const HISTORICAL_TREND_DATA: HistoricalTrend[] = [
   { year: "FY2009", totalFunds: 363383804, socialServices: 66729055, youthEducation: 206270000, artsCulture: 21800000, healthWellness: 67584749, environmentPublicSpace: 1000000 },
   { year: "FY2010", totalFunds: 313771129, socialServices: 81721129, youthEducation: 91197000, artsCulture: 71898000, healthWellness: 67955000, environmentPublicSpace: 1000000 },
@@ -318,13 +329,13 @@ export const HISTORICAL_TREND_DATA: HistoricalTrend[] = [
   { year: "FY2018", totalFunds: 302086000, grantsCount: 480, avgGrant: 629346, socialServices: 191746559, youthEducation: 31266000, artsCulture: 36199500, healthWellness: 20795800, environmentPublicSpace: 22078141 },
   { year: "FY2019", totalFunds: 338301000, grantsCount: 846, avgGrant: 399883, socialServices: 218362097, youthEducation: 32195000, artsCulture: 28422879, healthWellness: 46068024, environmentPublicSpace: 13253000 },
   { year: "FY2020", totalFunds: 404372774, grantsCount: 2841, avgGrant: 142335, socialServices: 258295521, youthEducation: 50970000, artsCulture: 31582879, healthWellness: 50286024, environmentPublicSpace: 13238350 },
-  { year: "FY2021", totalFunds: 304268931, grantsCount: 1810, avgGrant: 168104, socialServices: 187762635, youthEducation: 20850256, artsCulture: 41997724, healthWellness: 41371716, environmentPublicSpace: 12286600 },
-  { year: "FY2022", totalFunds: 465728895, grantsCount: 1492, avgGrant: 312151, socialServices: 325305234, youthEducation: 21550000, artsCulture: 35797879, healthWellness: 54512432, environmentPublicSpace: 28563350 },
-  { year: "FY2023", totalFunds: 486446095, grantsCount: 1848, avgGrant: 263228, socialServices: 247389337, youthEducation: 83928217, artsCulture: 49595000, healthWellness: 81040041, environmentPublicSpace: 24493500 },
-  { year: "FY2024", totalFunds: 471875565, grantsCount: 5368, avgGrant: 87905, socialServices: 256683683, youthEducation: 61736169, artsCulture: 50050000, healthWellness: 78185113, environmentPublicSpace: 25220600 },
-  { year: "FY2025", totalFunds: 534913682, grantsCount: 5646, avgGrant: 94742, socialServices: 306066473, youthEducation: 64436169, artsCulture: 50050000, healthWellness: 82895440, environmentPublicSpace: 31465600 },
-  { year: "FY2026", totalFunds: 665080021, grantsCount: 5838, avgGrant: 113923, socialServices: 406587864, youthEducation: 94653217, artsCulture: 34350000, healthWellness: 98495440, environmentPublicSpace: 30993500 },
-  { year: "FY2027", totalFunds: 655764999, grantsCount: 6118, avgGrant: 107186, socialServices: 395837843, youthEducation: 94513217, artsCulture: 34350000, healthWellness: 99320439, environmentPublicSpace: 31743500 }
+  { year: "FY2021", totalFunds: 304268931, grantsCount: 1810, avgGrant: 168104, socialServices: 185542450, youthEducation: 21769159, artsCulture: 42844158, healthWellness: 41822699, environmentPublicSpace: 12290465 },
+  { year: "FY2022", totalFunds: 465728895, grantsCount: 1492, avgGrant: 312151, socialServices: 323127277, youthEducation: 23005040, artsCulture: 36189270, healthWellness: 54756585, environmentPublicSpace: 28650723 },
+  { year: "FY2023", totalFunds: 486446095, grantsCount: 1848, avgGrant: 263228, socialServices: 211553002, youthEducation: 109427912, artsCulture: 54498862, healthWellness: 86046913, environmentPublicSpace: 24919406 },
+  { year: "FY2024", totalFunds: 471875565, grantsCount: 5368, avgGrant: 87905, socialServices: 254213487, youthEducation: 63424658, artsCulture: 50381072, healthWellness: 78588837, environmentPublicSpace: 25267511 },
+  { year: "FY2025", totalFunds: 534913682, grantsCount: 5646, avgGrant: 94742, socialServices: 303135692, youthEducation: 66313768, artsCulture: 50581735, healthWellness: 83373650, environmentPublicSpace: 31508837 },
+  { year: "FY2026", totalFunds: 665080021, grantsCount: 5838, avgGrant: 113923, socialServices: 328199926, youthEducation: 143661278, artsCulture: 49179653, healthWellness: 112096001, environmentPublicSpace: 31943163 },
+  { year: "FY2027", totalFunds: 655764999, grantsCount: 6118, avgGrant: 107186, socialServices: 325701199, youthEducation: 137118905, artsCulture: 48254695, healthWellness: 110267520, environmentPublicSpace: 34422680 }
 ];
 
 // Real category-level growth, FY2020 -> FY2026, parsed directly from each year's reconciliation

@@ -1,0 +1,380 @@
+{
+  "_what": "Analysis + methodology for the 'Speaker's Initiative to Address Citywide Needs' Schedule C category, used to split its dollars across the app's 5 nonprofit sectors in HISTORICAL_TREND_DATA.",
+  "_problem": "In the Schedule C reconciliation summary, 'Speaker's Initiative to Address Citywide Needs' is a single catch-all line with no service description. In FY27 it is $86,522,049 = 13.2% of the entire discretionary budget and was previously dumped 100% into the 'Social Services' sector, which overstated that sector (it read 60.4% of FY27).",
+  "_source": "BetaNYC/New-York-City-Budget  data/combined/all_years_awards.csv (award-level; columns include year, category, initiative, award_type, member, organization, program, ein, amount, agency, purpose).",
+  "_finding": "The 'initiative' column just repeats the category name for this catch-all, but every underlying award IS tagged with an administering city agency (agency column). The agency reveals the true service: e.g. FY27's $86.4M of Speaker awards is 42.1% DYCD (youth), 15.9% DCLA (arts/culture), 7.2% DHMH + 5.4% DFTA (health/aging), 6.1% DCWP (a single $5.3M 'Save for College' financial-empowerment program), etc.",
+  "_method": "For each fiscal year with award-level data (FY2020-FY2027), the reconciliation Speaker dollar amount is split across the 5 sectors in proportion to that year's Speaker awards grouped by administering agency (agencyToSector map below). Distributing the RECONCILIATION amount (not the awards-CSV amount) keeps every year's sector sums reconciling exactly to the real Grand Total, even though the awards-CSV Speaker total and the reconciliation Speaker total diverge in some years (the two BetaNYC products categorize differently). For FY2016-FY2019 no award-level Speaker data exists, so those dollars remain in socialServices and are explicitly NOT deciphered.",
+  "_caveats": [
+    "agencyToSector is an approximation. DYCD ('Youth AND Community Development') is mapped wholesale to youthEducation though a minority of its awards fund community development; this is the single largest assumption (DYCD is ~42% of the FY27 Speaker pool).",
+    "FY2017 ($30.1M) and FY2018 ($20.5M) carry material undeciphered Speaker amounts still sitting in socialServices, inflating those two years' social share relative to FY2020+ where the same category is deciphered. This is a data-availability seam, not a real trend break.",
+    "Only the 'Speaker's Initiative' category is agency-redistributed. All other categories have informative names and are mapped by name in sector-category-mapping.json."
+  ],
+  "agencyToSector": {
+    "DYCD": "youthEducation",
+    "DOE": "youthEducation",
+    "CUNY": "youthEducation",
+    "ACS": "youthEducation",
+    "DCLA": "artsCulture",
+    "NYPL": "artsCulture",
+    "BPL": "artsCulture",
+    "QBPL": "artsCulture",
+    "DHMH": "healthWellness",
+    "DOHMH": "healthWellness",
+    "DFTA": "healthWellness",
+    "DPR": "environmentPublicSpace",
+    "DSNY": "environmentPublicSpace",
+    "DOT": "environmentPublicSpace",
+    "DSS/HRA": "socialServices",
+    "SBS": "socialServices",
+    "HPD": "socialServices",
+    "DHS": "socialServices",
+    "DCWP": "socialServices",
+    "FDNY": "socialServices",
+    "MAYOR": "socialServices",
+    "CLERK": "socialServices"
+  },
+  "fy27SpeakerByAgency": [
+    {
+      "agency": "DYCD",
+      "sector": "youthEducation",
+      "amount": 36389211,
+      "awards": 289,
+      "pctOfSpeaker": 42.1
+    },
+    {
+      "agency": "DCLA",
+      "sector": "artsCulture",
+      "amount": 13709000,
+      "awards": 76,
+      "pctOfSpeaker": 15.9
+    },
+    {
+      "agency": "DHMH",
+      "sector": "healthWellness",
+      "amount": 6245000,
+      "awards": 59,
+      "pctOfSpeaker": 7.2
+    },
+    {
+      "agency": "DCWP",
+      "sector": "socialServices",
+      "amount": 5300000,
+      "awards": 1,
+      "pctOfSpeaker": 6.1
+    },
+    {
+      "agency": "DFTA",
+      "sector": "healthWellness",
+      "amount": 4685000,
+      "awards": 48,
+      "pctOfSpeaker": 5.4
+    },
+    {
+      "agency": "DOE",
+      "sector": "youthEducation",
+      "amount": 3625000,
+      "awards": 12,
+      "pctOfSpeaker": 4.2
+    },
+    {
+      "agency": "SBS",
+      "sector": "socialServices",
+      "amount": 3275000,
+      "awards": 26,
+      "pctOfSpeaker": 3.8
+    },
+    {
+      "agency": "DSS/HRA",
+      "sector": "socialServices",
+      "amount": 2765000,
+      "awards": 26,
+      "pctOfSpeaker": 3.2
+    },
+    {
+      "agency": "HPD",
+      "sector": "socialServices",
+      "amount": 2390000,
+      "awards": 18,
+      "pctOfSpeaker": 2.8
+    },
+    {
+      "agency": "CUNY",
+      "sector": "youthEducation",
+      "amount": 2335000,
+      "awards": 21,
+      "pctOfSpeaker": 2.7
+    },
+    {
+      "agency": "DPR",
+      "sector": "environmentPublicSpace",
+      "amount": 2240000,
+      "awards": 9,
+      "pctOfSpeaker": 2.6
+    },
+    {
+      "agency": "CLERK",
+      "sector": "socialServices",
+      "amount": 1463838,
+      "awards": 2,
+      "pctOfSpeaker": 1.7
+    },
+    {
+      "agency": "DHS",
+      "sector": "socialServices",
+      "amount": 660000,
+      "awards": 7,
+      "pctOfSpeaker": 0.8
+    },
+    {
+      "agency": "MAYOR",
+      "sector": "socialServices",
+      "amount": 401000,
+      "awards": 1,
+      "pctOfSpeaker": 0.5
+    },
+    {
+      "agency": "DSNY",
+      "sector": "environmentPublicSpace",
+      "amount": 345000,
+      "awards": 3,
+      "pctOfSpeaker": 0.4
+    },
+    {
+      "agency": "ACS",
+      "sector": "youthEducation",
+      "amount": 190000,
+      "awards": 4,
+      "pctOfSpeaker": 0.2
+    },
+    {
+      "agency": "NYPL",
+      "sector": "artsCulture",
+      "amount": 158000,
+      "awards": 2,
+      "pctOfSpeaker": 0.2
+    },
+    {
+      "agency": "FDNY",
+      "sector": "socialServices",
+      "amount": 105000,
+      "awards": 1,
+      "pctOfSpeaker": 0.1
+    },
+    {
+      "agency": "DOT",
+      "sector": "environmentPublicSpace",
+      "amount": 90000,
+      "awards": 1,
+      "pctOfSpeaker": 0.1
+    },
+    {
+      "agency": "BPL",
+      "sector": "artsCulture",
+      "amount": 8000,
+      "awards": 1,
+      "pctOfSpeaker": 0.0
+    },
+    {
+      "agency": "QBPL",
+      "sector": "artsCulture",
+      "amount": 8000,
+      "awards": 1,
+      "pctOfSpeaker": 0.0
+    }
+  ],
+  "fy27SpeakerTopNamedPrograms": [
+    {
+      "program": "Save for College Program",
+      "amount": 5300000
+    },
+    {
+      "program": "Citywide Community Arts Programming",
+      "amount": 2500000
+    },
+    {
+      "program": "Teacher Center",
+      "amount": 2500000
+    },
+    {
+      "program": "SCI Network NYC",
+      "amount": 2000000
+    },
+    {
+      "program": "Wave Makers",
+      "amount": 1500000
+    },
+    {
+      "program": "A Living Memorial to the Holocaust",
+      "amount": 1250000
+    },
+    {
+      "program": "Project Cupid",
+      "amount": 1065975
+    },
+    {
+      "program": "Museum Field Trips",
+      "amount": 750000
+    },
+    {
+      "program": "College Access and Leadership",
+      "amount": 750000
+    },
+    {
+      "program": "Community-Based Outreach & Engagement",
+      "amount": 600000
+    },
+    {
+      "program": "Vocational Partnership at Highbridge",
+      "amount": 600000
+    },
+    {
+      "program": "Decode Hate Workshops",
+      "amount": 550000
+    },
+    {
+      "program": "Legacy Investment: Strengthening Our Impact",
+      "amount": 500000
+    },
+    {
+      "program": "Credible Messengers of Staten Island (CMSI) Program",
+      "amount": 500000
+    },
+    {
+      "program": "NYCHA Tenant Associations",
+      "amount": 500000
+    },
+    {
+      "program": "Combat Hate",
+      "amount": 500000
+    },
+    {
+      "program": "WCS STEM Career Lattice",
+      "amount": 500000
+    },
+    {
+      "program": "Mount Ararat Senior Center",
+      "amount": 475000
+    },
+    {
+      "program": "Capacity Building Training",
+      "amount": 401000
+    },
+    {
+      "program": "Alianza Cultural Center",
+      "amount": 350000
+    }
+  ],
+  "perYearHandling": [
+    {
+      "fiscalYear": "FY2009",
+      "speakerReconAmount": 0,
+      "method": "no Speaker category this year"
+    },
+    {
+      "fiscalYear": "FY2010",
+      "speakerReconAmount": 0,
+      "method": "no Speaker category this year"
+    },
+    {
+      "fiscalYear": "FY2011",
+      "speakerReconAmount": 0,
+      "method": "no Speaker category this year"
+    },
+    {
+      "fiscalYear": "FY2012",
+      "speakerReconAmount": 0,
+      "method": "no Speaker category this year"
+    },
+    {
+      "fiscalYear": "FY2013",
+      "speakerReconAmount": 0,
+      "method": "no Speaker category this year"
+    },
+    {
+      "fiscalYear": "FY2014",
+      "speakerReconAmount": 0,
+      "method": "no Speaker category this year"
+    },
+    {
+      "fiscalYear": "FY2015",
+      "speakerReconAmount": 0,
+      "method": "no Speaker category this year"
+    },
+    {
+      "fiscalYear": "FY2016",
+      "speakerReconAmount": 940000,
+      "method": "kept in socialServices (predates award-level agency tagging; NOT deciphered)"
+    },
+    {
+      "fiscalYear": "FY2017",
+      "speakerReconAmount": 30075000,
+      "method": "kept in socialServices (predates award-level agency tagging; NOT deciphered)"
+    },
+    {
+      "fiscalYear": "FY2018",
+      "speakerReconAmount": 20538600,
+      "method": "kept in socialServices (predates award-level agency tagging; NOT deciphered)"
+    },
+    {
+      "fiscalYear": "FY2019",
+      "speakerReconAmount": 2340000,
+      "method": "kept in socialServices (predates award-level agency tagging; NOT deciphered)"
+    },
+    {
+      "fiscalYear": "FY2020",
+      "speakerReconAmount": 2870000,
+      "method": "agency-redistributed (award-level data available)"
+    },
+    {
+      "fiscalYear": "FY2021",
+      "speakerReconAmount": 2726500,
+      "method": "agency-redistributed (award-level data available)"
+    },
+    {
+      "fiscalYear": "FY2022",
+      "speakerReconAmount": 2870000,
+      "method": "agency-redistributed (award-level data available)"
+    },
+    {
+      "fiscalYear": "FY2023",
+      "speakerReconAmount": 41612809,
+      "method": "agency-redistributed (award-level data available)"
+    },
+    {
+      "fiscalYear": "FY2024",
+      "speakerReconAmount": 2830000,
+      "method": "agency-redistributed (award-level data available)"
+    },
+    {
+      "fiscalYear": "FY2025",
+      "speakerReconAmount": 3370000,
+      "method": "agency-redistributed (award-level data available)"
+    },
+    {
+      "fiscalYear": "FY2026",
+      "speakerReconAmount": 96080500,
+      "method": "agency-redistributed (award-level data available)"
+    },
+    {
+      "fiscalYear": "FY2027",
+      "speakerReconAmount": 86522049,
+      "method": "agency-redistributed (award-level data available)"
+    }
+  ],
+  "fy27SectorSplitBeforeAfter": {
+    "before_speaker_all_in_social": {
+      "socialServices": "60.4%",
+      "healthWellness": "15.1%",
+      "youthEducation": "14.4%",
+      "artsCulture": "5.2%",
+      "environmentPublicSpace": "4.8%"
+    },
+    "after_speaker_by_agency": {
+      "socialServices": "49.7%",
+      "youthEducation": "20.9%",
+      "healthWellness": "16.8%",
+      "artsCulture": "7.4%",
+      "environmentPublicSpace": "5.2%"
+    }
+  }
+}

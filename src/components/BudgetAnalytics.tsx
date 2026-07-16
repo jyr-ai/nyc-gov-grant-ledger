@@ -540,35 +540,35 @@ export default function BudgetAnalytics() {
                 color: "#003B71",
                 trending: "Expanded Emergency Food Assistance Programs (EFAP), local pantries, elder meal-delivery runs, and housing eviction defense legal advocacy.",
                 keywords: ["Emergency Pantries", "Crisis Kitchens", "Eviction Defense", "Eldercare Meals"],
-                pct: "60.4% of FY27 (real)"
+                pct: "49.7% of FY27 (real)"
               },
               youthEducation: {
                 label: "Youth Services & Education",
                 color: "#F27D26",
                 trending: "Expansion of math/science academies, digital literacy campaigns, free coding camps, and after-school tutoring labs in historically underfunded districts.",
                 keywords: ["Robotics Labs", "Free Coding Academies", "After-school Enrichment", "Homework Help"],
-                pct: "14.4% of FY27 (real)"
+                pct: "20.9% of FY27 (real)"
               },
               artsCulture: {
                 label: "Arts & Culture",
                 color: "#D9A406",
                 trending: "Decentralized neighborhood block festivals, cultural fairs, public theater programs, and local heritage ensemble workshops.",
                 keywords: ["Block Fairs", "Heritage Festivals", "Community Theaters", "Folk Art Classes"],
-                pct: "5.2% of FY27 (real)"
+                pct: "7.4% of FY27 (real)"
               },
               healthWellness: {
                 label: "Health & Community Wellness",
                 color: "#2E7D32",
                 trending: "Maternal care navigation, local doula coalitions, peer-led mental health sessions, and mobile health testing centers.",
                 keywords: ["Doula Guides", "Peer Counseling Nets", "Mobile Health Vans", "Wellness Seminars"],
-                pct: "15.1% of FY27 (real)"
+                pct: "16.8% of FY27 (real)"
               },
               environmentPublicSpace: {
                 label: "Environment & Public Space",
                 color: "#00838F",
                 trending: "Urban agriculture programs, greening preservation, clean neighborhood sweeps, and community garden soil remediation actions.",
                 keywords: ["Garden Preservation", "Beautification Actions", "Neighborhood Clean-ups", "Greening Pilots"],
-                pct: "4.8% of FY27 (real)"
+                pct: "5.2% of FY27 (real)"
               }
             };
 
@@ -737,35 +737,35 @@ export default function BudgetAnalytics() {
                 color: "#003B71",
                 trending: "Expanded Emergency Food Assistance Programs (EFAP), local pantries, elder meal-delivery runs, and housing eviction defense legal advocacy.",
                 keywords: ["Emergency Pantries", "Crisis Kitchens", "Tenant Eviction Counsel", "Senior Center Meals"],
-                pct: "60.4% of FY27 (real)"
+                pct: "49.7% of FY27 (real)"
               },
               youthEducation: {
                 label: "Youth Services & Education",
                 color: "#F27D26",
                 trending: "Expansion of math/science academies, digital literacy campaigns, free coding camps, and after-school tutoring labs in historically underfunded districts.",
                 keywords: ["Robotics Labs", "Free Coding Academies", "After-school Enrichment", "Homework Help"],
-                pct: "14.4% of FY27 (real)"
+                pct: "20.9% of FY27 (real)"
               },
               artsCulture: {
                 label: "Arts & Culture",
                 color: "#D9A406",
                 trending: "Decentralized neighborhood block festivals, cultural fairs, public theater programs, and local heritage ensemble workshops.",
                 keywords: ["Block Fairs", "Heritage Festivals", "Community Theaters", "Folk Art Classes"],
-                pct: "5.2% of FY27 (real)"
+                pct: "7.4% of FY27 (real)"
               },
               healthWellness: {
                 label: "Health & Community Wellness",
                 color: "#2E7D32",
                 trending: "Maternal care navigation, local doula coalitions, peer-led mental health sessions, and mobile health testing centers.",
                 keywords: ["Doula Guides", "Peer Counseling Nets", "Mobile Health Vans", "Wellness Seminars"],
-                pct: "15.1% of FY27 (real)"
+                pct: "16.8% of FY27 (real)"
               },
               environmentPublicSpace: {
                 label: "Environment & Public Space",
                 color: "#00838F",
                 trending: "Urban agriculture programs, greening preservation, clean neighborhood sweeps, and community garden soil remediation actions.",
                 keywords: ["Garden Preservation", "Beautification Actions", "Neighborhood Clean-ups", "Greening Pilots"],
-                pct: "4.8% of FY27 (real)"
+                pct: "5.2% of FY27 (real)"
               }
             };
 
@@ -775,9 +775,13 @@ export default function BudgetAnalytics() {
                   <div>
                     <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-[#F27D26] mb-2">Overview of Nonprofit Sectors</h4>
                     <p className="text-xs text-[#1A1A1A] font-sans leading-relaxed">
-                      Discretionary funding over the past two decades has increasingly centered around community safety-nets. In real FY2027 data,
-                      <strong> Social Services</strong> is the largest slice (60.4%), followed by <strong>Health & Wellness</strong> (15.1%) and <strong>Youth & Education</strong> (14.4%).
-                      Select a specific spotlight button above to filter lines and read the real per-year figures.
+                      Discretionary funding over the past two decades has centered around community safety-nets. In real FY2027 data,
+                      <strong> Social Services</strong> is the largest slice (49.7%), followed by <strong>Youth &amp; Education</strong> (20.9%),
+                      <strong> Health &amp; Wellness</strong> (16.8%), <strong>Arts &amp; Culture</strong> (7.4%), and <strong>Environment &amp; Public Space</strong> (5.2%).
+                      The Council&apos;s $86.5M &ldquo;Speaker&apos;s Initiative to Address Citywide Needs&rdquo; carries no service label in the summary data, so its
+                      dollars are split across sectors by each award&apos;s administering agency (DYCD&rarr;Youth, DCLA&rarr;Arts, DHMH/DFTA&rarr;Health, etc.)
+                      from the award-level file &mdash; see data/schedule-c-reconciliation/speaker-initiative-analysis.json.
+                      Select a spotlight button above to filter lines and read the real per-year figures.
                     </p>
                   </div>
                 ) : (

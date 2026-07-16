@@ -51,6 +51,18 @@ saved.
   each bucket are 100% real (each category's `printed` value); only the
   grouping label is ours. For every year, the 5 bucket sums add up exactly to
   that year's real Grand Total — see `verification` in the file itself.
+- `speaker-initiative-analysis.json` — **also not sourced as a "sector".** The
+  reconciliation category `Speaker's Initiative to Address Citywide Needs` is a
+  content-free catch-all (in FY27 it's $86.5M / 13.2% of the whole budget with
+  no service label). This file decodes it using the award-level file
+  `combined/all_years_awards.csv`, where every award carries an administering
+  **agency** — so the Speaker's dollars are split across the 5 sectors by agency
+  (DYCD→youth, DCLA→arts, DHMH/DFTA→health, DPR→environment, else→social) for
+  FY2020–FY2027. This is why the FY27 "Social Services" share dropped from 60.4%
+  (Speaker's dumped into social) to 49.7% (Speaker's split by agency). The file
+  documents the agency→sector map, the FY27 agency + named-program breakdown,
+  per-year handling, and the caveats (esp. DYCD wholesale→youth, and FY17/FY18
+  carrying undeciphered Speaker dollars that predate award-level tagging).
 
 ## Important caveat: award-count coverage varies by year
 
