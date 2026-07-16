@@ -5,7 +5,7 @@ import {
   NYC_BUDGET_OVERVIEW,
   AGENCY_BUDGET_DATA,
   FOCUS_AREA_DATA,
-  BOROUGH_DATA,
+  CAPITAL_BY_BOROUGH,
   BUDGET_INITIATIVES
 } from "./src/data/budgetData.js"; // .js extension required for Node ESM on Vercel (resolves to the .ts source)
 
@@ -360,7 +360,7 @@ app.get("/api/budget/stats", (req, res) => {
     overview: NYC_BUDGET_OVERVIEW,
     agencies: AGENCY_BUDGET_DATA,
     focusAreas: FOCUS_AREA_DATA,
-    boroughs: BOROUGH_DATA,
+    capitalByBorough: CAPITAL_BY_BOROUGH,
     initiatives: BUDGET_INITIATIVES
   });
 });

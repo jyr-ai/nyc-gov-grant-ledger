@@ -17,14 +17,13 @@ import {
 import {
   AGENCY_BUDGET_DATA,
   FOCUS_AREA_DATA,
-  BOROUGH_DATA,
+  CAPITAL_BY_BOROUGH,
   BUDGET_INITIATIVES,
   NYC_BUDGET_OVERVIEW,
   HISTORICAL_TREND_DATA,
   TRENDING_TOPICS_DATA,
   COUNCIL_ROSTER,
   ORG_PROFILES,
-  INITIATIVES_METADATA,
   AUDIT_RESPONSES
 } from "../data/budgetData";
 import {
@@ -52,6 +51,27 @@ const formatCurrency = (value: number) => {
     return `$${(value / 1000000).toFixed(1)}M`;
   }
   return `$${value.toLocaleString()}`;
+};
+
+// Year-over-year change badge for the ledger cards. Compares the current-year
+// value against the prior year's reconciliation figure.
+const ChangeBadge = ({ current, previous }: { current: number; previous: number }) => {
+  if (!previous) return null;
+  const pct = ((current - previous) / previous) * 100;
+  const up = pct >= 0;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-1.5 py-0.5 border ${
+        up
+          ? "text-emerald-800 border-emerald-300 bg-emerald-50"
+          : "text-rose-800 border-rose-300 bg-rose-50"
+      }`}
+      title={`${NYC_BUDGET_OVERVIEW.priorFiscalYear}: reconciliation baseline`}
+    >
+      <span aria-hidden>{up ? "▲" : "▼"}</span>
+      {up ? "+" : ""}{pct.toFixed(1)}% vs {NYC_BUDGET_OVERVIEW.priorFiscalYear}
+    </span>
+  );
 };
 
 // Custom Tooltip component for Nonprofit Sectors LineChart to guarantee ordered layout:
@@ -113,9 +133,9 @@ export default function BudgetAnalytics() {
 
   // States for the Interactive Open Data Audit Desk
   const [activeQueryId, setActiveQueryId] = useState<string>("q1");
-  const [selectedCM, setSelectedCM] = useState<string>("Chi Ossé");
-  const [selectedOrg, setSelectedOrg] = useState<string>("Brooklyn Youth Code Guild");
-  const [selectedInit, setSelectedInit] = useState<string>("Cultural After-School Adventures (CASA)");
+  const [selectedCM, setSelectedCM] = useState<string>("Osse");
+  const [selectedOrg, setSelectedOrg] = useState<string>("Girls Who Code, Inc.");
+  const [selectedInit, setSelectedInit] = useState<string>(BUDGET_INITIATIVES[0].name);
 
   const agencyMapData = AGENCY_BUDGET_DATA.map(agency => ({
     name: agency.id,
@@ -133,14 +153,14 @@ export default function BudgetAnalytics() {
   const renderAuditResult = () => {
     switch (activeQueryId) {
       case "q1": {
-        // "Which organizations did Council Member [name] fund in FY2026, and how much did each receive?"
-        const data = AUDIT_RESPONSES.cmExpense2026[selectedCM] || [];
+        // "Which organizations did Council Member [name] fund in FY2027, and how much did each receive?"
+        const data = AUDIT_RESPONSES.cmExpenseCurrent[selectedCM] || [];
         const totalAllocated = data.reduce((sum, item) => sum + item.amount, 0);
         return (
           <div className="space-y-4" id="audit-result-q1">
             <div className="flex justify-between items-baseline border-b border-[#1A1A1A]/10 pb-2 flex-wrap gap-2">
               <h4 className="font-serif font-black text-sm text-[#1A1A1A]">
-                FY2026 Allocations Sponsored by CM {selectedCM}
+                FY2027 Allocations Sponsored by CM {selectedCM}
               </h4>
               <div className="text-xs font-mono font-bold text-[#003B71]">
                 Total: {formatCurrency(totalAllocated)} ({data.length} Awards)
@@ -178,13 +198,13 @@ export default function BudgetAnalytics() {
         );
       }
       case "q2": {
-        // "Show every discretionary award sponsored by Council Member [name] from FY2020 to FY2024."
+        // "Show every discretionary award sponsored by Council Member [name] from FY2024 to FY2027."
         const data = AUDIT_RESPONSES.cmExpenseHistory[selectedCM] || [];
         return (
           <div className="space-y-4" id="audit-result-q2">
             <div className="flex justify-between items-baseline border-b border-[#1A1A1A]/10 pb-2">
               <h4 className="font-serif font-black text-sm text-[#1A1A1A]">
-                Historical Discretionary Awards Tracker (FY2020 - FY2024)
+                Historical Discretionary Awards Tracker (FY2024 - FY2027)
               </h4>
               <span className="text-[10px] font-mono font-bold text-[#F27D26] uppercase">Sponsor: {selectedCM}</span>
             </div>
@@ -197,7 +217,6 @@ export default function BudgetAnalytics() {
                       <th className="py-2 px-2">Recipient Organization</th>
                       <th className="py-2 px-2">Allocated Purpose</th>
                       <th className="py-2 px-2 font-mono">Agency</th>
-                      <th className="py-2 px-2 font-mono">Resolution</th>
                       <th className="py-2 pl-2 text-right">Amount</th>
                     </tr>
                   </thead>
@@ -208,7 +227,6 @@ export default function BudgetAnalytics() {
                         <td className="py-2.5 px-2 font-serif font-bold text-[#1A1A1A]">{item.organization}</td>
                         <td className="py-2.5 px-2 text-[#444]">{item.purpose}</td>
                         <td className="py-2.5 px-2 font-mono text-[10px]">{item.agency}</td>
-                        <td className="py-2.5 px-2 font-mono text-[10px] text-slate-500">{item.resolution}</td>
                         <td className="py-2.5 pl-2 text-right font-mono font-bold text-[#F27D26]">{formatCurrency(item.amount)}</td>
                       </tr>
                     ))}
@@ -222,57 +240,56 @@ export default function BudgetAnalytics() {
         );
       }
       case "q3": {
-        // "Was [organization]’s FY2026 funding later rescinded or moved to a different group by a Transparency Resolution?"
-        const data = AUDIT_RESPONSES.transparencyRes[selectedOrg];
+        // "Which categories had a reconciliation variance between the initiatives worksheet and the printed, adopted Schedule C — and in which fiscal year?"
+        const data = AUDIT_RESPONSES.reconciliationVariances;
         return (
           <div className="space-y-4" id="audit-result-q3">
             <div className="border-b border-[#1A1A1A]/10 pb-2 flex justify-between items-baseline flex-wrap gap-2">
               <h4 className="font-serif font-black text-sm text-[#1A1A1A]">
-                Transparency Resolution Audit for {selectedOrg}
+                Reconciliation Variance Ledger (FY2009 - FY2026)
               </h4>
-              <span className={`px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider ${
-                data?.status.includes("Rescinded") ? "bg-red-50 text-red-700 border border-red-200" :
-                data?.status.includes("Increased") ? "bg-emerald-50 text-emerald-800 border border-emerald-200" :
-                "bg-blue-50 text-blue-800 border border-blue-200"
-              }`}>
-                {data?.status || "Record Reconciled"}
-              </span>
+              <span className="text-[10px] font-mono font-bold text-[#F27D26] uppercase">{data.length} Real Variances Found</span>
             </div>
-            {data ? (
-              <div className="p-4 bg-[#F0EEE6] border-l-4 border-[#003B71] space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
-                  <div>
-                    <span className="text-[10px] text-slate-500 uppercase block">Original Budget Line</span>
-                    <span className="font-bold text-[#1A1A1A]">{formatCurrency(data.original)}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-500 uppercase block">Originating Sponsor</span>
-                    <span className="font-bold text-[#1A1A1A]">{data.sponsor}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-500 uppercase block">Mid-Year Adjustment Resolution</span>
-                    <span className="font-bold text-[#F27D26]">{data.resolution}</span>
-                  </div>
-                </div>
-                <div className="text-xs text-[#1A1A1A] leading-relaxed pt-2 border-t border-[#1A1A1A]/10">
-                  <span className="font-bold uppercase tracking-wider text-[9px] block mb-1 text-[#003B71]">Audited Legislative Trail:</span>
-                  {data.trail}
-                </div>
-              </div>
-            ) : (
-              <p className="text-xs italic text-slate-400">No Transparency Resolution entries found for this organization.</p>
-            )}
+            <p className="text-xs text-[#555] italic">
+              BetaNYC's own reconciliation flags every category where the "initiatives" worksheet total didn't match the "printed" adopted Schedule C amount. Every row below is real — sourced directly from the reconciliation files, not estimated.
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-[#1A1A1A] uppercase text-[9px] font-mono font-bold text-slate-500">
+                    <th className="py-2">Fiscal Year</th>
+                    <th className="py-2 px-2">Category</th>
+                    <th className="py-2 px-2 text-right">Initiatives Worksheet</th>
+                    <th className="py-2 px-2 text-right">Printed (Adopted)</th>
+                    <th className="py-2 pl-2 text-right">Variance</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E5E3DB]">
+                  {data.map((item, i) => (
+                    <tr key={i} className="hover:bg-[#F0EEE6]/30">
+                      <td className="py-2.5 font-mono font-bold text-[#003B71]">{item.fy}</td>
+                      <td className="py-2.5 px-2 font-serif font-bold text-[#1A1A1A]">{item.category}</td>
+                      <td className="py-2.5 px-2 text-right font-mono text-[#444]">{formatCurrency(item.initiatives)}</td>
+                      <td className="py-2.5 px-2 text-right font-mono text-[#444]">{formatCurrency(item.printed)}</td>
+                      <td className={`py-2.5 pl-2 text-right font-mono font-bold ${item.diff >= 0 ? "text-emerald-700" : "text-red-600"}`}>
+                        {item.diff >= 0 ? "+" : ""}{formatCurrency(item.diff)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         );
       }
       case "q4": {
-        // "List every capital project [council member] sponsored since FY2020, with the adopted amount and the agency."
+        // "List every FY2027 capital project [council member] sponsored, with the amount, agency, and borough."
         const data = AUDIT_RESPONSES.capitalProjects[selectedCM] || [];
         return (
           <div className="space-y-4" id="audit-result-q4">
             <div className="flex justify-between items-baseline border-b border-[#1A1A1A]/10 pb-2">
               <h4 className="font-serif font-black text-sm text-[#1A1A1A]">
-                Capital Budget Allocations since FY2020
+                FY2027 Capital Budget Allocations
               </h4>
               <span className="text-xs font-mono font-bold text-[#003B71] uppercase">Sponsor: {selectedCM}</span>
             </div>
@@ -281,25 +298,20 @@ export default function BudgetAnalytics() {
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="border-b border-[#1A1A1A] uppercase text-[9px] font-mono font-bold text-slate-500">
-                      <th className="py-2">Adopted FY</th>
-                      <th className="py-2 px-2">Project Name</th>
+                      <th className="py-2">Project Name</th>
                       <th className="py-2 px-2">Managing Agency</th>
-                      <th className="py-2 px-2">Project Status</th>
+                      <th className="py-2 px-2">Borough</th>
                       <th className="py-2 pl-2 text-right">Adopted Amount</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E5E3DB]">
                     {data.map((item, i) => (
                       <tr key={i} className="hover:bg-[#F0EEE6]/30">
-                        <td className="py-2.5 font-mono font-bold text-[#003B71]">{item.fy}</td>
-                        <td className="py-2.5 px-2 font-serif font-bold text-[#1A1A1A]">{item.project}</td>
+                        <td className="py-2.5 font-serif font-bold text-[#1A1A1A]">{item.project || "(untitled project line)"}</td>
                         <td className="py-2.5 px-2">{item.agency}</td>
                         <td className="py-2.5 px-2">
-                          <span className={`px-2 py-0.5 rounded-none font-mono text-[9px] font-bold ${
-                            item.status === "Completed" ? "bg-emerald-50 text-emerald-700" :
-                            item.status === "In Progress" ? "bg-amber-50 text-amber-700" : "bg-blue-50 text-blue-700"
-                          }`}>
-                            {item.status}
+                          <span className="px-2 py-0.5 rounded-none font-mono text-[9px] font-bold bg-[#003B71]/10 text-[#003B71]">
+                            {item.boro}
                           </span>
                         </td>
                         <td className="py-2.5 pl-2 text-right font-mono font-bold text-[#F27D26]">{formatCurrency(item.amount)}</td>
@@ -309,54 +321,47 @@ export default function BudgetAnalytics() {
                 </table>
               </div>
             ) : (
-              <p className="text-xs italic text-slate-400">No capital projects loaded for selected Council Member.</p>
+              <p className="text-xs italic text-slate-400">Real result: no capital projects are recorded for this member in the FY27 capital budget file.</p>
             )}
           </div>
         );
       }
       case "q5": {
-        // "Find the full legislative trail for the [initiative name] initiative: the resolution that adopted it and its Legistar record."
-        const data = INITIATIVES_METADATA.find(i => i.name === selectedInit);
+        // "What does the real FY27 award-level data show for the [initiative] program: which agency runs it, and what's the real award range?"
+        const data = BUDGET_INITIATIVES.find(i => i.name === selectedInit);
         return (
           <div className="space-y-4" id="audit-result-q5">
             <div className="border-b border-[#1A1A1A]/10 pb-2">
               <h4 className="font-serif font-black text-sm text-[#1A1A1A]">
-                Legislative Trail & Legistar Record
+                FY2027 Initiative Funding Lookup
               </h4>
             </div>
             {data ? (
-              <div className="p-4 bg-[#F0EEE6] border border-[#1A1A1A]/20 space-y-3" id="legistar-box">
+              <div className="p-4 bg-[#F0EEE6] border border-[#1A1A1A]/20 space-y-3" id="initiative-lookup-box">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
                   <div>
                     <span className="text-[10px] text-slate-500 uppercase block">Initiative Line</span>
                     <span className="font-bold text-[#1A1A1A]">{data.name}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-500 uppercase block">Adoption Resolution</span>
-                    <span className="font-bold text-[#F27D26]">{data.adoptionResolution}</span>
+                    <span className="text-[10px] text-slate-500 uppercase block">Managing Agency</span>
+                    <span className="font-bold text-[#F27D26]">{data.agency}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-500 uppercase block">Legistar File ID</span>
-                    <span className="font-bold text-[#003B71] underline cursor-pointer hover:text-black">
-                      File {data.legistarFile}
-                    </span>
+                    <span className="text-[10px] text-slate-500 uppercase block">Real Award Range (FY27)</span>
+                    <span className="font-bold text-[#003B71]">{data.averageGrant}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-500 uppercase block">Responsible Committee</span>
-                    <span className="font-bold text-[#1A1A1A]">{data.committee}</span>
+                    <span className="text-[10px] text-slate-500 uppercase block">Opportunity Level</span>
+                    <span className="font-bold text-[#1A1A1A]">{data.fundingLevel}</span>
                   </div>
                 </div>
                 <div className="text-xs text-[#1A1A1A] leading-relaxed pt-3 border-t border-[#1A1A1A]/10 font-sans">
-                  <span className="font-bold block mb-1">Legislative Progress:</span>
-                  1. Formally introduced by the {data.committee} as a discretionary operating schedule line during May.
-                  <br />
-                  2. Enacted into law on June 28 under {data.adoptionResolution} matching the Mayor's executive operating agreement.
-                  <br />
-                  3. Digitized into the BetaNYC Schedule C Open Data Ledger for permanent public audits.
+                  {data.description}
                 </div>
               </div>
             ) : (
-              <p className="text-xs italic text-slate-400">No legislative metadata available for this initiative.</p>
+              <p className="text-xs italic text-slate-400">No award-level data found for this initiative.</p>
             )}
           </div>
         );
@@ -368,7 +373,7 @@ export default function BudgetAnalytics() {
           <div className="space-y-4" id="audit-result-q6">
             <div className="border-b border-[#1A1A1A]/10 pb-2 flex justify-between items-baseline flex-wrap gap-2">
               <h4 className="font-serif font-black text-sm text-[#1A1A1A]">
-                EIN Historical Cumulative Analysis (FY2015 - FY2026)
+                EIN Historical Cumulative Analysis (FY2015 - FY2027)
               </h4>
               <div className="text-xs font-mono font-bold text-[#F27D26]">
                 Lifetime Discretionary Total: {data ? formatCurrency(data.total) : "$0"}
@@ -432,12 +437,15 @@ export default function BudgetAnalytics() {
               <Landmark className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-3xl font-serif font-black tracking-tight text-[#1A1A1A]">
-            {formatCurrency(NYC_BUDGET_OVERVIEW.totalDiscretionary)}
+          <div className="flex items-end justify-between gap-2 flex-wrap">
+            <div className="text-3xl font-serif font-black tracking-tight text-[#1A1A1A]">
+              {formatCurrency(NYC_BUDGET_OVERVIEW.totalDiscretionary)}
+            </div>
+            <ChangeBadge current={NYC_BUDGET_OVERVIEW.totalDiscretionary} previous={NYC_BUDGET_OVERVIEW.totalDiscretionaryPrev} />
           </div>
           <p className="text-[11px] text-[#555] mt-3 font-medium flex items-center gap-1.5 border-t border-[#E5E3DB] pt-2">
             <Info className="w-3.5 h-3.5 text-[#F27D26]" />
-            Official Schedule C Discretionary Budget
+            Schedule C Grand Total ({NYC_BUDGET_OVERVIEW.fiscalYear})
           </p>
         </div>
 
@@ -452,12 +460,15 @@ export default function BudgetAnalytics() {
               <Award className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-3xl font-serif font-black tracking-tight text-[#1A1A1A]">
-            {NYC_BUDGET_OVERVIEW.totalAllocations.toLocaleString()}
+          <div className="flex items-end justify-between gap-2 flex-wrap">
+            <div className="text-3xl font-serif font-black tracking-tight text-[#1A1A1A]">
+              {NYC_BUDGET_OVERVIEW.totalAllocations.toLocaleString()}
+            </div>
+            <ChangeBadge current={NYC_BUDGET_OVERVIEW.totalAllocations} previous={NYC_BUDGET_OVERVIEW.totalAllocationsPrev} />
           </div>
           <p className="text-[11px] text-[#555] mt-3 font-medium flex items-center gap-1.5 border-t border-[#E5E3DB] pt-2">
             <TrendingUp className="w-3.5 h-3.5 text-[#1A1A1A]" />
-            Grants across all five NYC boroughs
+            Schedule C awards across all five NYC boroughs
           </p>
         </div>
 
@@ -472,12 +483,15 @@ export default function BudgetAnalytics() {
               <FileSpreadsheet className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-3xl font-serif font-black tracking-tight text-[#1A1A1A]">
-            {formatCurrency(NYC_BUDGET_OVERVIEW.averageGrant)}
+          <div className="flex items-end justify-between gap-2 flex-wrap">
+            <div className="text-3xl font-serif font-black tracking-tight text-[#1A1A1A]">
+              {formatCurrency(NYC_BUDGET_OVERVIEW.averageGrant)}
+            </div>
+            <ChangeBadge current={NYC_BUDGET_OVERVIEW.averageGrant} previous={NYC_BUDGET_OVERVIEW.averageGrantPrev} />
           </div>
           <p className="text-[11px] text-[#555] mt-3 font-medium flex items-center gap-1.5 border-t border-[#E5E3DB] pt-2">
             <HelpCircle className="w-3.5 h-3.5 text-[#F27D26]" />
-            Varies dynamically by agency thresholds
+            Average award (Grand Total ÷ {NYC_BUDGET_OVERVIEW.totalAllocations.toLocaleString()} awards)
           </p>
         </div>
       </div>
@@ -526,35 +540,35 @@ export default function BudgetAnalytics() {
                 color: "#003B71",
                 trending: "Expanded Emergency Food Assistance Programs (EFAP), local pantries, elder meal-delivery runs, and housing eviction defense legal advocacy.",
                 keywords: ["Emergency Pantries", "Crisis Kitchens", "Eviction Defense", "Eldercare Meals"],
-                pct: "35% Average Share"
+                pct: "60.4% of FY27 (real)"
               },
               youthEducation: {
                 label: "Youth Services & Education",
                 color: "#F27D26",
                 trending: "Expansion of math/science academies, digital literacy campaigns, free coding camps, and after-school tutoring labs in historically underfunded districts.",
                 keywords: ["Robotics Labs", "Free Coding Academies", "After-school Enrichment", "Homework Help"],
-                pct: "27% Average Share"
+                pct: "14.4% of FY27 (real)"
               },
               artsCulture: {
                 label: "Arts & Culture",
                 color: "#D9A406",
                 trending: "Decentralized neighborhood block festivals, cultural fairs, public theater programs, and local heritage ensemble workshops.",
                 keywords: ["Block Fairs", "Heritage Festivals", "Community Theaters", "Folk Art Classes"],
-                pct: "15% Average Share"
+                pct: "5.2% of FY27 (real)"
               },
               healthWellness: {
                 label: "Health & Community Wellness",
                 color: "#2E7D32",
                 trending: "Maternal care navigation, local doula coalitions, peer-led mental health sessions, and mobile health testing centers.",
                 keywords: ["Doula Guides", "Peer Counseling Nets", "Mobile Health Vans", "Wellness Seminars"],
-                pct: "14% Average Share"
+                pct: "15.1% of FY27 (real)"
               },
               environmentPublicSpace: {
                 label: "Environment & Public Space",
                 color: "#00838F",
                 trending: "Urban agriculture programs, greening preservation, clean neighborhood sweeps, and community garden soil remediation actions.",
                 keywords: ["Garden Preservation", "Beautification Actions", "Neighborhood Clean-ups", "Greening Pilots"],
-                pct: "9% Average Share"
+                pct: "4.8% of FY27 (real)"
               }
             };
 
@@ -723,35 +737,35 @@ export default function BudgetAnalytics() {
                 color: "#003B71",
                 trending: "Expanded Emergency Food Assistance Programs (EFAP), local pantries, elder meal-delivery runs, and housing eviction defense legal advocacy.",
                 keywords: ["Emergency Pantries", "Crisis Kitchens", "Tenant Eviction Counsel", "Senior Center Meals"],
-                pct: "35% Average Share"
+                pct: "60.4% of FY27 (real)"
               },
               youthEducation: {
                 label: "Youth Services & Education",
                 color: "#F27D26",
                 trending: "Expansion of math/science academies, digital literacy campaigns, free coding camps, and after-school tutoring labs in historically underfunded districts.",
                 keywords: ["Robotics Labs", "Free Coding Academies", "After-school Enrichment", "Homework Help"],
-                pct: "27% Average Share"
+                pct: "14.4% of FY27 (real)"
               },
               artsCulture: {
                 label: "Arts & Culture",
                 color: "#D9A406",
                 trending: "Decentralized neighborhood block festivals, cultural fairs, public theater programs, and local heritage ensemble workshops.",
                 keywords: ["Block Fairs", "Heritage Festivals", "Community Theaters", "Folk Art Classes"],
-                pct: "15% Average Share"
+                pct: "5.2% of FY27 (real)"
               },
               healthWellness: {
                 label: "Health & Community Wellness",
                 color: "#2E7D32",
                 trending: "Maternal care navigation, local doula coalitions, peer-led mental health sessions, and mobile health testing centers.",
                 keywords: ["Doula Guides", "Peer Counseling Nets", "Mobile Health Vans", "Wellness Seminars"],
-                pct: "14% Average Share"
+                pct: "15.1% of FY27 (real)"
               },
               environmentPublicSpace: {
                 label: "Environment & Public Space",
                 color: "#00838F",
                 trending: "Urban agriculture programs, greening preservation, clean neighborhood sweeps, and community garden soil remediation actions.",
                 keywords: ["Garden Preservation", "Beautification Actions", "Neighborhood Clean-ups", "Greening Pilots"],
-                pct: "9% Average Share"
+                pct: "4.8% of FY27 (real)"
               }
             };
 
@@ -761,9 +775,9 @@ export default function BudgetAnalytics() {
                   <div>
                     <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-[#F27D26] mb-2">Overview of Nonprofit Sectors</h4>
                     <p className="text-xs text-[#1A1A1A] font-sans leading-relaxed">
-                      Discretionary funding over the past two decades has increasingly centered around community safety-nets and education. 
-                      <strong> Social Services</strong> represents the largest slice (~35%), followed by <strong>Youth & Education</strong> (~27%). 
-                      Select a specific spotlight button above to filter lines and read detailed trending topics and keywords.
+                      Discretionary funding over the past two decades has increasingly centered around community safety-nets. In real FY2027 data,
+                      <strong> Social Services</strong> is the largest slice (60.4%), followed by <strong>Health & Wellness</strong> (15.1%) and <strong>Youth & Education</strong> (14.4%).
+                      Select a specific spotlight button above to filter lines and read the real per-year figures.
                     </p>
                   </div>
                 ) : (
@@ -794,7 +808,7 @@ export default function BudgetAnalytics() {
           })()}
 
           <div className="mt-4 text-[10.5px] text-slate-500 font-mono leading-relaxed bg-[#F0EEE6]/50 p-3 border-l-2 border-[#003B71]">
-            * Note: Discretionary funding totals have increased by 23% since FY2020, driven by expanded council member allocation capacities, while average individual grant sizes stabilized around $88,000.
+            * Note: Real Grand Total discretionary funding has grown 62.2% since FY2020 ($404.4M → $655.8M), while the FY27 average award size is $107,186 (Grand Total ÷ 6,118 awards).
           </div>
         </div>
 
@@ -835,7 +849,7 @@ export default function BudgetAnalytics() {
             <span className="text-[9px] font-mono font-bold bg-[#1A1A1A] text-white px-2 py-0.5 uppercase tracking-widest block w-fit mb-2">Legislative Query Engine</span>
             <h3 className="text-2xl font-serif font-black text-[#1A1A1A]" id="audit-desk-title">NYC Council Open Data Auditor</h3>
           </div>
-          <p className="text-xs text-[#555] font-sans">Query two decades of Council PDF extractions and Transparency Resolutions</p>
+          <p className="text-xs text-[#555] font-sans">Query real BetaNYC Schedule C award-level data (FY2015 - FY2027) and reconciliation records</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6" id="audit-desk-workspace">
@@ -853,8 +867,8 @@ export default function BudgetAnalytics() {
             >
               <User className="w-4 h-4 shrink-0 mt-0.5" />
               <div className="space-y-0.5">
-                <span className="font-serif font-bold block">1. Council Member FY2026 Rollup</span>
-                <span className="text-[10px] opacity-80 block">Which organizations did CM [name] fund in FY2026, and how much did they receive?</span>
+                <span className="font-serif font-bold block">1. Council Member FY2027 Rollup</span>
+                <span className="text-[10px] opacity-80 block">Which organizations did CM [name] fund in FY2027, and how much did they receive?</span>
               </div>
             </button>
 
@@ -870,7 +884,7 @@ export default function BudgetAnalytics() {
               <History className="w-4 h-4 shrink-0 mt-0.5" />
               <div className="space-y-0.5">
                 <span className="font-serif font-bold block">2. Multi-Year Sponsoring History</span>
-                <span className="text-[10px] opacity-80 block">Show discretionary awards sponsored by CM [name] from FY2020 to FY2024.</span>
+                <span className="text-[10px] opacity-80 block">Show discretionary awards sponsored by CM [name] from FY2024 to FY2027.</span>
               </div>
             </button>
 
@@ -883,8 +897,8 @@ export default function BudgetAnalytics() {
             >
               <GitPullRequest className="w-4 h-4 shrink-0 mt-0.5" />
               <div className="space-y-0.5">
-                <span className="font-serif font-bold block">3. Transparency Mid-Year Adjustments</span>
-                <span className="text-[10px] opacity-80 block">Was [organization]’s FY2026 funding later rescinded or moved by a Resolution?</span>
+                <span className="font-serif font-bold block">3. Reconciliation Variance Ledger</span>
+                <span className="text-[10px] opacity-80 block">Which categories had a variance between the initiatives worksheet and printed Schedule C, and in which year?</span>
               </div>
             </button>
 
@@ -897,8 +911,8 @@ export default function BudgetAnalytics() {
             >
               <Landmark className="w-4 h-4 shrink-0 mt-0.5" />
               <div className="space-y-0.5">
-                <span className="font-serif font-bold block">4. Capital Project Ledger (since FY2020)</span>
-                <span className="text-[10px] opacity-80 block">List capital projects sponsored by [council member] with agency and adopted amounts.</span>
+                <span className="font-serif font-bold block">4. Capital Project Ledger (FY2027)</span>
+                <span className="text-[10px] opacity-80 block">List FY2027 capital projects sponsored by [council member] with agency, borough, and amount.</span>
               </div>
             </button>
 
@@ -911,8 +925,8 @@ export default function BudgetAnalytics() {
             >
               <BookOpen className="w-4 h-4 shrink-0 mt-0.5" />
               <div className="space-y-0.5">
-                <span className="font-serif font-bold block">5. Legislative Trail & Legistar Record</span>
-                <span className="text-[10px] opacity-80 block">Find the full legislative trail for an initiative: resolution and Legistar record.</span>
+                <span className="font-serif font-bold block">5. Initiative Funding Lookup</span>
+                <span className="text-[10px] opacity-80 block">What agency runs [initiative], and what's the real FY27 award range?</span>
               </div>
             </button>
 
@@ -962,7 +976,7 @@ export default function BudgetAnalytics() {
               )}
 
               {/* Render Organization dropdown if question involves Organization */}
-              {["q3", "q6"].includes(activeQueryId) && (
+              {["q6"].includes(activeQueryId) && (
                 <div className="space-y-1.5" id="org-selector-container">
                   <label className="text-xs font-bold text-[#1A1A1A] flex items-center gap-1.5 font-serif">
                     <Building2 className="w-3.5 h-3.5 text-[#003B71]" />
@@ -996,7 +1010,7 @@ export default function BudgetAnalytics() {
                     onChange={(e) => setSelectedInit(e.target.value)}
                     className="w-full bg-[#F9F8F3] border border-[#1A1A1A] px-3 py-2 text-xs font-mono font-bold cursor-pointer focus:border-[#F27D26] outline-none rounded-none"
                   >
-                    {INITIATIVES_METADATA.map((init) => (
+                    {BUDGET_INITIATIVES.map((init) => (
                       <option key={init.name} value={init.name}>
                         {init.name} ({init.agency})
                       </option>
@@ -1014,7 +1028,7 @@ export default function BudgetAnalytics() {
               </div>
               <div className="flex items-center gap-2 mt-4 pt-3 border-t border-[#E5E3DB] text-[10px] text-slate-400 font-mono">
                 <FileText className="w-3.5 h-3.5 text-[#003B71]" />
-                <span>Verified with machine-readable Council PDF exports (FY2015 forward).</span>
+                <span>Sourced from BetaNYC Schedule C award-level CSVs (FY2015 forward).</span>
               </div>
             </div>
 
@@ -1146,7 +1160,7 @@ export default function BudgetAnalytics() {
                   >
                     {FOCUS_AREA_DATA.map((entry, index) => {
                       // Map standard colors to editorial palette matching DSSG Blue and Orange
-                      const palette = ["#003B71", "#F27D26", "#8F8D83", "#134074", "#D46B13", "#546A7B", "#B5B3A9", "#7B8A7A"];
+                      const palette = ["#003B71", "#F27D26", "#8F8D83", "#134074", "#D46B13", "#546A7B", "#B5B3A9", "#7B8A7A", "#C84B31", "#D9A406"];
                       const color = palette[index % palette.length];
                       return <Cell key={`cell-${index}`} fill={color} stroke="#F9F8F3" strokeWidth={2} />;
                     })}
@@ -1160,7 +1174,7 @@ export default function BudgetAnalytics() {
               </ResponsiveContainer>
               <div className="absolute flex flex-col items-center justify-center text-center pointer-events-none">
                 <span className="text-[10px] uppercase tracking-widest text-[#666] font-mono font-bold">Scope</span>
-                <span className="text-lg font-serif italic font-bold">8 Pillars</span>
+                <span className="text-lg font-serif italic font-bold">{FOCUS_AREA_DATA.length} Categories</span>
               </div>
             </div>
           </div>
@@ -1195,12 +1209,15 @@ export default function BudgetAnalytics() {
         <div className="bg-[#F9F8F3] p-6 rounded-none border border-[#1A1A1A] lg:col-span-1" id="borough-allocations-card">
           <div className="mb-6 border-b border-[#1A1A1A] pb-4">
             <span className="text-[9px] font-mono font-bold bg-[#1A1A1A] text-white px-2 py-0.5 uppercase tracking-widest block w-fit mb-2">Geography</span>
-            <h3 className="text-xl font-serif font-bold text-[#1A1A1A]" id="borough-section-title">Borough Disbursements</h3>
+            <h3 className="text-xl font-serif font-bold text-[#1A1A1A]" id="borough-section-title">FY2027 Capital Budget by Borough</h3>
+            <p className="text-[10px] text-slate-500 mt-1.5 leading-relaxed">
+              Schedule C discretionary awards have no borough field in the source data. This panel instead shows the real FY27 <span className="font-bold">capital</span> budget by borough — a different funding instrument, sourced from the FY27 capital-projects file.
+            </p>
           </div>
-          
+
           <div className="space-y-6" id="borough-list">
-            {BOROUGH_DATA.map((borough, index) => {
-              const maxVal = Math.max(...BOROUGH_DATA.map(b => b.totalFunds));
+            {CAPITAL_BY_BOROUGH.map((borough, index) => {
+              const maxVal = Math.max(...CAPITAL_BY_BOROUGH.map(b => b.totalFunds));
               const percentOfMax = (borough.totalFunds / maxVal) * 100;
               // Alternate bar color matching theme
               const barColor = index % 2 === 0 ? "#003B71" : "#F27D26";
@@ -1221,8 +1238,8 @@ export default function BudgetAnalytics() {
                   </div>
                   
                   <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-                    <span>{borough.allocationsCount} Adoptions</span>
-                    <span>Mean Award: {formatCurrency(Math.round(borough.totalFunds / borough.allocationsCount))}</span>
+                    <span>{borough.allocationsCount} Capital Projects</span>
+                    <span>Mean Project: {formatCurrency(Math.round(borough.totalFunds / borough.allocationsCount))}</span>
                   </div>
                 </div>
               );
