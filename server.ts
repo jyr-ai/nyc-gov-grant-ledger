@@ -115,7 +115,18 @@ async function generateAIContent(
       }
       throw new Error("No text response from Gemini API.");
     } catch (err: any) {
-      console.error("Gemini API call failed, attempting backup Anthropic API...", err);
+      // Gemini free tier caps generate_content at 20 requests/day/model. Once that
+      // daily quota is hit, every call 429s until it resets (midnight Pacific) — this
+      // is expected, not a fault, so log it quietly and fall through to Claude. Any
+      // other Gemini failure is a real error and stays at console.error.
+      const isQuotaExhausted =
+        err?.status === 429 ||
+        /RESOURCE_EXHAUSTED|exceeded your current quota/i.test(err?.message || "");
+      if (isQuotaExhausted) {
+        console.log("Gemini daily free-tier quota reached (429) — using Anthropic Claude fallback (expected).");
+      } else {
+        console.error("Gemini API call failed, attempting backup Anthropic API...", err);
+      }
       geminiError = err;
     }
   } else {
