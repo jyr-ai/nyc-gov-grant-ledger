@@ -124,6 +124,29 @@ const CustomSectorsTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
+const CustomFocusAreaTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const item = payload[0].payload;
+    return (
+      <div className="bg-[#F9F8F3] border-2 border-[#1A1A1A] p-3 shadow-[3px_3px_0px_0px_#1A1A1A] font-mono text-xs text-[#1A1A1A] min-w-[220px] max-w-[300px]">
+        <div className="flex items-start gap-2 border-b border-[#1A1A1A] pb-1.5 mb-2">
+          <span className="w-2.5 h-2.5 shrink-0 mt-0.5" style={{ backgroundColor: item.color }} />
+          <span className="font-bold leading-tight">{item.name}</span>
+        </div>
+        <div className="flex justify-between items-center gap-4">
+          <span className="text-[#555] text-[10px] uppercase tracking-wide">FY27 Funding</span>
+          <span className="font-bold">{formatCurrency(item.totalFunds)}</span>
+        </div>
+        <div className="flex justify-between items-center gap-4 mt-1">
+          <span className="text-[#555] text-[10px] uppercase tracking-wide">Share of Grand Total</span>
+          <span className="font-bold text-[#F27D26]">{item.percentage}%</span>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
 export default function BudgetAnalytics() {
   const [selectedAgency, setSelectedAgency] = useState<string | null>(null);
 
@@ -1173,19 +1196,13 @@ export default function BudgetAnalytics() {
                     outerRadius={85}
                     paddingAngle={2}
                     dataKey="totalFunds"
+                    nameKey="name"
                   >
-                    {FOCUS_AREA_DATA.map((entry, index) => {
-                      // Map standard colors to editorial palette matching DSSG Blue and Orange
-                      const palette = ["#003B71", "#F27D26", "#8F8D83", "#134074", "#D46B13", "#546A7B", "#B5B3A9", "#7B8A7A", "#C84B31", "#D9A406"];
-                      const color = palette[index % palette.length];
-                      return <Cell key={`cell-${index}`} fill={color} stroke="#F9F8F3" strokeWidth={2} />;
-                    })}
+                    {FOCUS_AREA_DATA.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} stroke="#F9F8F3" strokeWidth={2} />
+                    ))}
                   </Pie>
-                  <Tooltip
-                    formatter={(value: any) => [formatCurrency(Number(value)), "Funding"]}
-                    contentStyle={{ backgroundColor: "#F9F8F3", border: "2px solid #1A1A1A", borderRadius: "0px" }}
-                    itemStyle={{ color: "#1A1A1A", fontSize: "11px", fontFamily: "monospace" }}
-                  />
+                  <Tooltip content={<CustomFocusAreaTooltip />} />
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute flex flex-col items-center justify-center text-center pointer-events-none">
@@ -1197,22 +1214,18 @@ export default function BudgetAnalytics() {
           
           {/* Custom Grid Legend */}
           <div className="grid grid-cols-1 gap-2.5 mt-6 pt-4 border-t border-[#1A1A1A]/10 text-xs" id="focus-pie-legend">
-            {FOCUS_AREA_DATA.map((area, index) => {
-              const palette = ["#003B71", "#F27D26", "#8F8D83", "#134074", "#D46B13", "#546A7B", "#B5B3A9", "#7B8A7A"];
-              const color = palette[index % palette.length];
-              return (
-                <div key={index} className="flex items-center justify-between gap-2 border-b border-[#E5E3DB] pb-1.5 last:border-0" id={`legend-item-${index}`}>
-                  <div className="flex items-center gap-2 truncate">
-                    <span className="w-2.5 h-2.5 rounded-none shrink-0" style={{ backgroundColor: color }} />
-                    <span className="font-bold text-[#1A1A1A] truncate">{area.name}</span>
-                  </div>
-                  <div className="flex gap-2 text-[11px] font-mono shrink-0">
-                    <span className="text-[#555]">{formatCurrency(area.totalFunds)}</span>
-                    <span className="font-bold text-[#F27D26]">({area.percentage}%)</span>
-                  </div>
+            {FOCUS_AREA_DATA.map((area, index) => (
+              <div key={index} className="flex items-center justify-between gap-2 border-b border-[#E5E3DB] pb-1.5 last:border-0" id={`legend-item-${index}`}>
+                <div className="flex items-center gap-2 truncate">
+                  <span className="w-2.5 h-2.5 rounded-none shrink-0" style={{ backgroundColor: area.color }} />
+                  <span className="font-bold text-[#1A1A1A] truncate">{area.name}</span>
                 </div>
-              );
-            })}
+                <div className="flex gap-2 text-[11px] font-mono shrink-0">
+                  <span className="text-[#555]">{formatCurrency(area.totalFunds)}</span>
+                  <span className="font-bold text-[#F27D26]">({area.percentage}%)</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 

@@ -215,17 +215,29 @@ export const AGENCY_BUDGET_DATA: AgencyBudget[] = [
 
 // Real FY27 category breakdown — every category from the Schedule C reconciliation's 25-row
 // summary table, sourced from fy27_schedule_c_reconciliation.txt (percentage of the real GRAND TOTAL).
+// "Speaker's Initiative to Address Citywide Needs" ($86,522,049) is deliberately folded into "All
+// Other Categories" rather than shown as its own slice here: unlike every other category in this
+// list, it is a content-free catch-all with no real service meaning of its own (see
+// data/schedule-c-reconciliation/speaker-initiative-analysis.json for the agency-based breakdown used
+// elsewhere in the app, e.g. the Historical Timeline's Nonprofit Sectors view). Mixing that synthetic
+// agency-derived split into a chart that otherwise shows literal, real Schedule C category names would
+// blend two different classification systems in one chart, so it stays out of this one.
+// Colors: the 8 named categories use a CVD-validated 8-hue categorical order (validated via the
+// dataviz skill's validate_palette.js against this app's #F9F8F3 chart surface — passes lightness,
+// chroma, CVD-separation, and normal-vision-floor checks; the light-mode contrast WARN on 3 slots is
+// mitigated by the always-visible legend + tooltip, which never rely on color alone). The 9th slot
+// ("All Other Categories") is a deliberate neutral gray outside that 8-hue set, not a 9th generated
+// hue, since it is a rollup rather than a peer identity.
 export const FOCUS_AREA_DATA: FocusAreaBudget[] = [
-  { name: "Speaker's Initiative to Address Citywide Needs", totalFunds: 86522049, percentage: 13.2, color: "#003B71" },
-  { name: "Immigrant Services", totalFunds: 86417141, percentage: 13.2, color: "#F27D26" },
-  { name: "Community Development", totalFunds: 45225000, percentage: 6.9, color: "#8F8D83" },
-  { name: "Education", totalFunds: 43284300, percentage: 6.6, color: "#134074" },
-  { name: "Mental Health Services", totalFunds: 40767110, percentage: 6.2, color: "#D46B13" },
-  { name: "Cultural Organizations", totalFunds: 34350000, percentage: 5.2, color: "#546A7B" },
-  { name: "Criminal Justice Services", totalFunds: 33470153, percentage: 5.1, color: "#B5B3A9" },
-  { name: "Small Business Services and Workforce Development", totalFunds: 33252902, percentage: 5.1, color: "#7B8A7A" },
-  { name: "Older Adult Services", totalFunds: 31990323, percentage: 4.9, color: "#C84B31" },
-  { name: "All Other Categories (16 lines)", totalFunds: 220486021, percentage: 33.6, color: "#D9A406" }
+  { name: "Immigrant Services", totalFunds: 86417141, percentage: 13.2, color: "#2a78d6" },
+  { name: "Community Development", totalFunds: 45225000, percentage: 6.9, color: "#008300" },
+  { name: "Education", totalFunds: 43284300, percentage: 6.6, color: "#e87ba4" },
+  { name: "Mental Health Services", totalFunds: 40767110, percentage: 6.2, color: "#eda100" },
+  { name: "Cultural Organizations", totalFunds: 34350000, percentage: 5.2, color: "#1baf7a" },
+  { name: "Criminal Justice Services", totalFunds: 33470153, percentage: 5.1, color: "#eb6834" },
+  { name: "Small Business Services and Workforce Development", totalFunds: 33252902, percentage: 5.1, color: "#4a3aa7" },
+  { name: "Older Adult Services", totalFunds: 31990323, percentage: 4.9, color: "#e34948" },
+  { name: "All Other Categories (17 lines, incl. Speaker's Initiative)", totalFunds: 307008070, percentage: 46.8, color: "#8F8D83" }
 ];
 
 // Real FY27 capital budget by borough — data/fy27/capital/fy27_capital_projects.csv, grouped by the
