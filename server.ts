@@ -17,6 +17,14 @@ const PORT = 3000;
 // (not_found_error), which looks like a failure even when the key is valid.
 const CLAUDE_MODEL = "claude-sonnet-4-5-20250929";
 
+// Master switch for the Anthropic fallback inside generateAIContent() (the
+// grant-match/draft AI path). Set to false to disable Claude as a usable
+// fallback while keeping all Anthropic code/keys/diagnostics in place —
+// flip back to true to re-enable without touching anything else.
+// Does NOT affect /api/debug or /api/health/gemini, which still test and
+// report Anthropic connectivity independently of this flag.
+const CLAUDE_FALLBACK_ENABLED = false;
+
 // Middleware for parsing JSON
 app.use(express.json());
 
@@ -135,6 +143,10 @@ async function generateAIContent(
   }
 
   // Fallback: Anthropic Claude
+  if (!CLAUDE_FALLBACK_ENABLED) {
+    throw new Error(`Primary AI (Gemini) failed: ${geminiError.message}. Anthropic fallback is disabled (CLAUDE_FALLBACK_ENABLED = false).`);
+  }
+
   const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
   const hasAnthropic = anthropicApiKey && anthropicApiKey !== "MY_ANTHROPIC_API_KEY";
   if (!hasAnthropic) {
